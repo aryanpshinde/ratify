@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm --filter @ratify/shared build && pnpm --parallel -r run dev",
     "build": "pnpm -r run build",
-    "lint": "eslint .",
+    "lint": "pnpm -r run lint",
     "typecheck": "pnpm --filter @ratify/shared build && pnpm -r run typecheck",
     "clean": "pnpm -r exec rm -rf dist node_modules/.tmp",
     "format": "prettier --write ."
@@ -20,10 +20,6 @@
   },
   "type": "module",
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.8.1",
-    "globals": "^17.11.0",
-    "prettier": "^3.9.6",
-    "typescript-eslint": "^8.67.0"
+    "prettier": "^3.9.6"
   }
 }
