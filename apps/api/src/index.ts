@@ -2,6 +2,8 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { HTTPException } from 'hono/http-exception';
+import { sql } from 'drizzle-orm';
+import { db } from './db/index.js';
 
 const app = new Hono();
 
@@ -12,6 +14,26 @@ app.get('/api/health', (c) => {
     status: 'ok',
     service: 'ratify-api',
   });
+});
+
+app.get('/api/db-health', async (c) => {
+  try {
+    const result = await db.execute(sql`SELECT 1 AS connected`);
+    return c.json({
+      status: 'ok',
+      database: 'connected',
+      result: result.rows,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        status: 'error',
+        database: 'disconnected',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      503,
+    );
+  }
 });
 
 app.onError((err, c) => {
