@@ -10,7 +10,7 @@ const app = new Hono();
 
 app.use(logger());
 
-app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw));
+app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', (c) => auth.handler(c.req.raw));
 
 app.get('/api/health', (c) => {
   return c.json({
