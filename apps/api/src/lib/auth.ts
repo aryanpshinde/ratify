@@ -12,5 +12,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  advanced: {
+    database: {
+      generateId: 'uuid',
+    },
+  },
   trustedOrigins: ['http://localhost:5173'],
 });
