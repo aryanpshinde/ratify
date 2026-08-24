@@ -1,5 +1,14 @@
 import { relations, sql } from 'drizzle-orm';
-import { pgTable, text, timestamp, boolean, uuid, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  uuid,
+  index,
+  uniqueIndex,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: uuid('id')
@@ -85,9 +94,36 @@ export const verifications = pgTable(
   (table) => [index('verifications_identifier_idx').on(table.identifier)],
 );
 
+export const clients = pgTable(
+  'clients',
+  {
+    id: uuid('id')
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    ownerId: uuid('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    name: varchar('name', { length: 255 }).notNull(),
+    email: varchar('email', { length: 255 }).notNull(),
+    company: varchar('company', { length: 255 }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('clients_ownerId_idx').on(table.ownerId),
+    index('clients_userId_idx').on(table.userId),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
+  ownedClients: many(clients, { relationName: 'clientOwner' }),
+  linkedClients: many(clients, { relationName: 'clientLinkedUsers' }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -101,5 +137,18 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   user: one(users, {
     fields: [accounts.userId],
     references: [users.id],
+  }),
+}));
+
+export const clientsRelations = relations(clients, ({ one }) => ({
+  owner: one(users, {
+    fields: [clients.ownerId],
+    references: [users.id],
+    relationName: 'clientOwner',
+  }),
+  linkedUser: one(users, {
+    fields: [clients.userId],
+    references: [users.id],
+    relationName: 'clientLinkedUsers',
   }),
 }));

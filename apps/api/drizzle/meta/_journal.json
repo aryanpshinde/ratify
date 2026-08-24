@@ -8,6 +8,13 @@
       "when": 1787334418826,
       "tag": "0000_lethal_charles_xavier",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787566987802,
+      "tag": "0001_furry_exiles",
+      "breakpoints": true
     }
   ]
 }
