@@ -1,1 +1,1 @@
-export const greet = (name: string) => `Hello from shared, ${name}`;
+export * from './client.js';
