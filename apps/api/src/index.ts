@@ -5,12 +5,15 @@ import { HTTPException } from 'hono/http-exception';
 import { sql } from 'drizzle-orm';
 import { db } from './db/index.js';
 import { auth } from './lib/auth.js';
+import clientRoutes from './routes/clients.js';
 
 const app = new Hono();
 
 app.use(logger());
 
 app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', (c) => auth.handler(c.req.raw));
+
+app.route('/api/clients', clientRoutes);
 
 app.get('/api/health', (c) => {
   return c.json({
