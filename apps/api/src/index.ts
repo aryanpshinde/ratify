@@ -5,6 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import { sql } from 'drizzle-orm';
 import { db } from './db/index.js';
 import { auth } from './lib/auth.js';
+import { env, isProd } from './lib/env.js';
 import clientRoutes from './routes/clients.js';
 
 const app = new Hono();
@@ -49,8 +50,6 @@ app.onError((err, c) => {
 
   console.error(`[Server Error] ${err.message}`);
 
-  const isProd = process.env.NODE_ENV === 'production';
-
   return c.json(
     {
       status: 'error',
@@ -67,7 +66,7 @@ app.notFound((c) => {
 serve(
   {
     fetch: app.fetch,
-    port: 3000,
+    port: env.PORT,
   },
   (info) => {
     console.log(`API running on http://localhost:${info.port}`);
