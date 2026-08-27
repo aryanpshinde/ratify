@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { signUp } from '@/lib/auth-client';
+import { JUST_SIGNED_UP_KEY } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,27 +12,30 @@ export function SignupForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(false);
 
-    const res = await signUp.email({
-      name,
-      email,
-      password,
-    });
+    try {
+      const res = await signUp.email({
+        name,
+        email,
+        password,
+      });
 
-    if (res.error) {
-      setError(res.error.message || 'Something went wrong. Please try again.');
-    } else {
-      setSuccess(true);
+      if (res.error) {
+        setError(res.error.message || 'Something went wrong. Please try again.');
+        return;
+      }
+
+      sessionStorage.setItem(JUST_SIGNED_UP_KEY, '1');
+    } catch {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -73,15 +77,12 @@ export function SignupForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
             />
+            <p className="text-caption text-muted-foreground">Must be at least 8 characters.</p>
           </div>
 
           {error && <p className="text-sm text-error">{error}</p>}
-          {success && (
-            <p className="text-sm text-success">
-              Account created successfully! You can now sign in.
-            </p>
-          )}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Creating account...' : 'Sign Up'}
