@@ -4,3 +4,7 @@ coverage
 pnpm-lock.yaml
 node_modules
 dist
+
+# Generated
+**/routeTree.gen.ts
+**/drizzle
