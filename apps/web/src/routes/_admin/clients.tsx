@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useClients } from '@/hooks/use-clients';
+import { useClients } from '@/hooks/clients/use-clients';
 import { ClientsEmptyState } from '@/components/clients/clients-empty-state';
 import { CreateClientDialog } from '@/components/clients/create-client-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
