@@ -29,7 +29,7 @@ export function UpdateClientDialog({ open, onOpenChange, client }: UpdateClientD
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<UpdateClientInput>({
     resolver: zodResolver(updateClientSchema),
     defaultValues: {
@@ -107,7 +107,7 @@ export function UpdateClientDialog({ open, onOpenChange, client }: UpdateClientD
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={updateClient.isPending}>
+            <Button type="submit" disabled={updateClient.isPending || !isDirty}>
               {updateClient.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>

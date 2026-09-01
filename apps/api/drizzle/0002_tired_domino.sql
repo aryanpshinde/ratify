@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "clients_owner_lower_email_uidx" ON "clients" USING btree ("owner_id",lower("email"));

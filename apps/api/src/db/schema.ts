@@ -116,6 +116,7 @@ export const clients = pgTable(
   (table) => [
     index('clients_ownerId_idx').on(table.ownerId),
     index('clients_userId_idx').on(table.userId),
+    uniqueIndex('clients_owner_lower_email_uidx').on(table.ownerId, sql`lower(${table.email})`),
   ],
 );
 

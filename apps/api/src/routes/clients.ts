@@ -3,7 +3,7 @@ import { db } from '../db/index.js';
 import { clients } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { createClientSchema, updateClientSchema } from '@ratify/shared';
-import { desc, eq, and } from 'drizzle-orm';
+import { desc, eq, and, sql } from 'drizzle-orm';
 
 const clientRoutes = new Hono();
 
@@ -44,6 +44,20 @@ clientRoutes.post('/', async (c) => {
   }
 
   const data = parsed.data;
+
+  const [existing] = await db
+    .select({ id: clients.id })
+    .from(clients)
+    .where(
+      and(
+        eq(clients.ownerId, session.user.id),
+        sql`lower(${clients.email}) = lower(${data.email})`,
+      ),
+    )
+    .limit(1);
+  if (existing) {
+    return c.json({ status: 'error', message: 'Email already exists' }, 409);
+  }
 
   const [created] = await db
     .insert(clients)
@@ -117,6 +131,23 @@ clientRoutes.patch('/:id', async (c) => {
   }
 
   const data = parsed.data;
+
+  if (data.email !== undefined) {
+    const [duplicate] = await db
+      .select({ id: clients.id })
+      .from(clients)
+      .where(
+        and(
+          eq(clients.ownerId, session.user.id),
+          sql`lower(${clients.email}) = lower(${data.email})`,
+        ),
+      )
+      .limit(1);
+    if (duplicate && duplicate.id !== id) {
+      return c.json({ status: 'error', message: 'Client email already exists' }, 409);
+    }
+  }
+
   const payload: Record<string, unknown> = { updatedAt: new Date() };
 
   if (data.name !== undefined) payload['name'] = data.name;
