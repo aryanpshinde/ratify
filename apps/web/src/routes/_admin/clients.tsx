@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useClients } from '@/hooks/clients/use-clients';
+import { useClients, type Client } from '@/hooks/clients/use-clients';
 import { ClientsEmptyState } from '@/components/clients/clients-empty-state';
 import { CreateClientDialog } from '@/components/clients/create-client-dialog';
+import { UpdateClientDialog } from '@/components/clients/update-client-dialog';
+import { DeleteClientDialog } from '@/components/clients/delete-client-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
@@ -33,6 +35,8 @@ function ClientsListSkeleton() {
 function ClientsPage() {
   const { data: clients, isPending, isError, error } = useClients();
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
 
   useEffect(() => {
     if (isError) {
@@ -68,11 +72,29 @@ function ClientsPage() {
                   {client.company || client.email || 'No company or email'}
                 </p>
               </div>
+              <div>
+                <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}>
+                  Edit
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setDeletingClient(client)}>
+                  Delete
+                </Button>
+              </div>
             </div>
           ))}
         </div>
       )}
 
+      <UpdateClientDialog
+        open={!!editingClient}
+        onOpenChange={(o) => !o && setEditingClient(null)}
+        client={editingClient}
+      />
+      <DeleteClientDialog
+        open={!!deletingClient}
+        onOpenChange={(o) => !o && setDeletingClient(null)}
+        client={deletingClient}
+      />
       <CreateClientDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
