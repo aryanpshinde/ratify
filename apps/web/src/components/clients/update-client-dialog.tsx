@@ -1,9 +1,9 @@
+import { ApiError } from '@/lib/api';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateClientSchema, type UpdateClientInput } from '@ratify/shared';
+import { updateClientSchema, type UpdateClientInput, type ClientResponse } from '@ratify/shared';
 import { useUpdateClient } from '@/hooks/clients/use-update-client';
-import type { Client } from '@/hooks/clients/use-clients';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ import {
 interface UpdateClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  client: Client | null;
+  client: ClientResponse | null;
 }
 
 export function UpdateClientDialog({ open, onOpenChange, client }: UpdateClientDialogProps) {
@@ -29,6 +29,7 @@ export function UpdateClientDialog({ open, onOpenChange, client }: UpdateClientD
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors, isDirty },
   } = useForm<UpdateClientInput>({
     resolver: zodResolver(updateClientSchema),
@@ -51,16 +52,31 @@ export function UpdateClientDialog({ open, onOpenChange, client }: UpdateClientD
 
   const onSubmit = (values: UpdateClientInput) => {
     if (!client) return;
-    const { company, ...rest } = values;
-    const payload: UpdateClientInput = company?.trim()
-      ? { ...rest, company: company.trim() }
-      : { ...rest, company: '' };
+    const payload: UpdateClientInput = {};
+    if (values.name && values.name !== client.name) payload.name = values.name;
+    if (values.email && values.email.toLowerCase() !== client.email.toLowerCase())
+      payload.email = values.email;
+    const curCompany = (values.company ?? '').trim();
+    const origCompany = (client.company ?? '').trim();
+    if (curCompany !== origCompany) payload.company = curCompany === '' ? null : curCompany;
+
+    if (Object.keys(payload).length === 0) {
+      reset();
+      onOpenChange(false);
+      return;
+    }
+
     updateClient.mutate(
       { id: client.id, data: payload },
       {
         onSuccess: () => {
           reset();
           onOpenChange(false);
+        },
+        onError: (error) => {
+          if (error instanceof ApiError && error.status === 409) {
+            setError('email', { message: 'Email already exists' });
+          }
         },
       },
     );

@@ -1,4 +1,4 @@
-import type { Client } from '@/hooks/clients/use-clients';
+import type { ClientResponse } from '@ratify/shared';
 import { useDeleteClient } from '@/hooks/clients/use-delete-client';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +13,7 @@ import {
 interface DeleteClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  client: Client | null;
+  client: ClientResponse | null;
 }
 
 export function DeleteClientDialog({ open, onOpenChange, client }: DeleteClientDialogProps) {

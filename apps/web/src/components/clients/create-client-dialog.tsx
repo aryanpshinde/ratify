@@ -1,3 +1,4 @@
+import { ApiError } from '@/lib/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClientSchema, type CreateClientInput } from '@ratify/shared';
@@ -26,6 +27,7 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors },
   } = useForm<CreateClientInput>({
     resolver: zodResolver(createClientSchema),
@@ -37,15 +39,15 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
   });
 
   const onSubmit = (values: CreateClientInput) => {
-    const { company, ...rest } = values;
-    const payload: CreateClientInput = company?.trim()
-      ? { ...rest, company: company.trim() }
-      : rest;
-
-    createClient.mutate(payload, {
+    createClient.mutate(values, {
       onSuccess: () => {
         reset();
         onOpenChange(false);
+      },
+      onError: (error) => {
+        if (error instanceof ApiError && error.status === 409) {
+          setError('email', { message: 'Email already exists for this owner' });
+        }
       },
     });
   };

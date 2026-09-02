@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useClients, type Client } from '@/hooks/clients/use-clients';
+import { useClients } from '@/hooks/clients/use-clients';
+import type { ClientResponse } from '@ratify/shared';
 import { ClientsEmptyState } from '@/components/clients/clients-empty-state';
 import { CreateClientDialog } from '@/components/clients/create-client-dialog';
 import { UpdateClientDialog } from '@/components/clients/update-client-dialog';
@@ -35,8 +36,8 @@ function ClientsListSkeleton() {
 function ClientsPage() {
   const { data: clients, isPending, isError, error } = useClients();
   const [createOpen, setCreateOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+  const [editingClient, setEditingClient] = useState<ClientResponse | null>(null);
+  const [deletingClient, setDeletingClient] = useState<ClientResponse | null>(null);
 
   useEffect(() => {
     if (isError) {
