@@ -2,7 +2,7 @@
   "name": "ratify",
   "private": true,
   "version": "1.0.0",
-  "packageManager": "pnpm@11.24.0",
+  "packageManager": "pnpm@11.25.0",
   "scripts": {
     "dev": "pnpm --filter @ratify/shared build && pnpm --parallel -r run dev",
     "build": "pnpm -r run build",
@@ -15,7 +15,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.24.0",
+      "version": "11.25.0",
       "onFail": "download"
     }
   },
