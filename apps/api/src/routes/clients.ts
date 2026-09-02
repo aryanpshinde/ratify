@@ -148,12 +148,11 @@ clientRoutes.patch('/:id', async (c) => {
     }
   }
 
-  const payload: Record<string, unknown> = { updatedAt: new Date() };
+  const payload: Record<string, unknown> = {};
 
   if (data.name !== undefined) payload['name'] = data.name;
   if (data.email !== undefined) payload['email'] = data.email;
-  if (data.company !== undefined)
-    payload['company'] = data.company?.trim() ? data.company.trim() : null;
+  if (data.company !== undefined) payload['company'] = data.company === '' ? null : data.company;
 
   const [updated] = await db.update(clients).set(payload).where(eq(clients.id, id)).returning();
 
