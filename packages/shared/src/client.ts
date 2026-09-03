@@ -1,13 +1,9 @@
 import * as z from 'zod';
-
-const normalizedEmail = z
-  .string()
-  .transform((value) => value.trim().toLowerCase())
-  .pipe(z.email().max(255));
+import { emailSchema } from './common.js';
 
 export const createClientSchema = z.object({
   name: z.string().trim().min(1).max(255),
-  email: normalizedEmail,
+  email: emailSchema,
   company: z
     .string()
     .trim()
@@ -19,7 +15,7 @@ export const createClientSchema = z.object({
 export const updateClientSchema = z
   .object({
     name: z.string().trim().min(1).max(255).optional(),
-    email: normalizedEmail.optional(),
+    email: emailSchema.optional(),
     company: z.string().trim().max(255).nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
