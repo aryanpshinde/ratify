@@ -20,7 +20,7 @@ export function useCreateClient() {
       toast.success('Client created successfully');
     },
     onError: (error) => {
-      if (error instanceof ApiError && error.status === 409) return;
+      if (error instanceof ApiError && (error.status === 409 || error.status === 400)) return;
       const message =
         error instanceof ApiError ? error.message : 'Failed to create client. Please try again.';
       toast.error('Failed to create client', { description: message });

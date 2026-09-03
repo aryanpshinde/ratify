@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateClientSchema, type UpdateClientInput, type ClientResponse } from '@ratify/shared';
 import { useUpdateClient } from '@/hooks/clients/use-update-client';
+import { applyValidationIssues } from '@/lib/form-errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -76,7 +77,9 @@ export function UpdateClientDialog({ open, onOpenChange, client }: UpdateClientD
         onError: (error) => {
           if (error instanceof ApiError && error.status === 409) {
             setError('email', { message: 'Email already exists' });
+            return;
           }
+          applyValidationIssues(error, setError);
         },
       },
     );

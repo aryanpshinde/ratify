@@ -45,7 +45,8 @@ function ClientsPage() {
         description: error?.message || 'Please try again later.',
       });
     }
-  }, [isError, error]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError]);
 
   return (
     <div className="space-y-6">

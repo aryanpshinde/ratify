@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClientSchema, type CreateClientInput } from '@ratify/shared';
 import { useCreateClient } from '@/hooks/clients/use-create-client';
+import { applyValidationIssues } from '@/lib/form-errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,7 +48,9 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
       onError: (error) => {
         if (error instanceof ApiError && error.status === 409) {
           setError('email', { message: 'Email already exists for this owner' });
+          return;
         }
+        applyValidationIssues(error, setError);
       },
     });
   };
