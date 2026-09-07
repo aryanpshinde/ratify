@@ -8,7 +8,19 @@ import {
   index,
   uniqueIndex,
   varchar,
+  pgEnum,
+  date,
+  jsonb,
+  check,
 } from 'drizzle-orm/pg-core';
+export const projectStatusEnum = pgEnum('project_status', [
+  'planning',
+  'in_progress',
+  'review',
+  'completed',
+  'archived',
+]);
+export const projectMemberRoleEnum = pgEnum('member_role', ['admin', 'client']);
 
 export const users = pgTable('users', {
   id: uuid('id')
@@ -120,11 +132,91 @@ export const clients = pgTable(
   ],
 );
 
+export const projects = pgTable(
+  'projects',
+  {
+    id: uuid('id')
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    ownerId: uuid('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id, { onDelete: 'cascade' }),
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
+    status: projectStatusEnum('status').notNull().default('planning'),
+    deadline: date('deadline'),
+    budgetDisplay: varchar('budget_display', { length: 100 }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('projects_ownerId_idx').on(table.ownerId),
+    index('projects_clientId_idx').on(table.clientId),
+    index('projects_status_idx').on(table.status),
+  ],
+);
+
+export const projectMembers = pgTable(
+  'project_members',
+  {
+    id: uuid('id')
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: projectMemberRoleEnum('role').notNull().default('client'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('project_members_userId_idx').on(table.userId),
+    uniqueIndex('project_members_projectId_userId_uidx').on(table.projectId, table.userId),
+  ],
+);
+
+export const activityLogs = pgTable(
+  'activity_logs',
+  {
+    id: uuid('id')
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    action: varchar('action', { length: 100 }).notNull(),
+    targetType: varchar('target_type', { length: 50 }),
+    targetId: uuid('target_id'),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('activity_logs_projectId_idx').on(table.projectId),
+    index('activity_logs_createdAt_idx').on(table.createdAt),
+    check(
+      'activity_logs_target_pair_chk',
+      sql`(${table.targetType} IS NULL AND ${table.targetId} IS NULL) OR (${table.targetType} IS NOT NULL AND ${table.targetId} IS NOT NULL)`,
+    ),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
   ownedClients: many(clients, { relationName: 'clientOwner' }),
   linkedClients: many(clients, { relationName: 'clientLinkedUsers' }),
+  ownedProjects: many(projects),
+  projectMemberships: many(projectMembers),
+  activityLogs: many(activityLogs),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -141,7 +233,7 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   }),
 }));
 
-export const clientsRelations = relations(clients, ({ one }) => ({
+export const clientsRelations = relations(clients, ({ one, many }) => ({
   owner: one(users, {
     fields: [clients.ownerId],
     references: [users.id],
@@ -151,5 +243,41 @@ export const clientsRelations = relations(clients, ({ one }) => ({
     fields: [clients.userId],
     references: [users.id],
     relationName: 'clientLinkedUsers',
+  }),
+  projects: many(projects),
+}));
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [projects.ownerId],
+    references: [users.id],
+  }),
+  client: one(clients, {
+    fields: [projects.clientId],
+    references: [clients.id],
+  }),
+  members: many(projectMembers),
+  activityLogs: many(activityLogs),
+}));
+
+export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectMembers.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+  project: one(projects, {
+    fields: [activityLogs.projectId],
+    references: [projects.id],
+  }),
+  actor: one(users, {
+    fields: [activityLogs.actorId],
+    references: [users.id],
   }),
 }));
