@@ -7,6 +7,7 @@ import { db } from './db/index.js';
 import { auth } from './lib/auth.js';
 import { env, isProd } from './lib/env.js';
 import clientRoutes from './routes/clients.js';
+import projectRoutes from './routes/projects.js';
 
 const app = new Hono();
 
@@ -15,6 +16,7 @@ app.use(logger());
 app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', (c) => auth.handler(c.req.raw));
 
 app.route('/api/clients', clientRoutes);
+app.route('/api/projects', projectRoutes);
 
 app.get('/api/health', (c) => {
   return c.json({
