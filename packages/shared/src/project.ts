@@ -52,8 +52,14 @@ export const projectResponseSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
+export const projectListItemSchema = projectResponseSchema.extend({
+  clientName: z.string(),
+  clientCompany: z.string().nullable(),
+});
+
 export type ProjectStatus = z.infer<typeof projectStatusSchema>;
 export type MemberRole = z.infer<typeof memberRoleSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type ProjectResponse = z.infer<typeof projectResponseSchema>;
+export type ProjectListItem = z.infer<typeof projectListItemSchema>;
