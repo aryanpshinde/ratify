@@ -27,14 +27,12 @@ export function SignupForm() {
         email: values.email,
         password: values.password,
       });
-
       if (res.error) {
         form.setError('root', {
           message: res.error.message || 'Signup failed. Please try again.',
         });
         return;
       }
-
       sessionStorage.setItem(JUST_SIGNED_UP_KEY, '1');
     } catch {
       form.setError('root', {
@@ -44,13 +42,13 @@ export function SignupForm() {
   };
 
   return (
-    <Card className="w-full max-w-sm noise-overlay bg-card">
+    <Card className="w-full max-w-md noise-overlay bg-card [--card-spacing:--spacing(6)]">
       <CardHeader>
         <CardTitle className="text-h2">Create an account</CardTitle>
         <CardDescription>Enter your details to get started with Ratify</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -58,12 +56,12 @@ export function SignupForm() {
               type="text"
               autoComplete="name"
               placeholder="Jane Doe"
+              className="h-9"
               aria-invalid={!!errors.name}
               {...form.register('name')}
             />
             {errors.name && <p className="text-sm text-error">{errors.name.message}</p>}
           </div>
-
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -71,28 +69,27 @@ export function SignupForm() {
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
+              className="h-9"
               aria-invalid={!!errors.email}
               {...form.register('email')}
             />
             {errors.email && <p className="text-sm text-error">{errors.email.message}</p>}
           </div>
-
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
               autoComplete="new-password"
+              className="h-9"
               aria-invalid={!!errors.password}
               {...form.register('password')}
             />
             {errors.password && <p className="text-sm text-error">{errors.password.message}</p>}
             <p className="text-caption text-muted-foreground">Must be at least 8 characters.</p>
           </div>
-
           {errors.root?.message && <p className="text-sm text-error">{errors.root.message}</p>}
-
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Creating account...' : 'Sign up'}
           </Button>
         </form>

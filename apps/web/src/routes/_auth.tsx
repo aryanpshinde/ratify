@@ -21,7 +21,7 @@ function AuthLayout() {
   }
 
   return (
-    <main className="min-h-screen bg-background flex flex-col items-center justify-center gap-8 p-8">
+    <main className="min-h-screen bg-background flex flex-col items-center justify-center gap-10 p-8">
       <div className="flex flex-col items-center gap-2">
         <h1 className="text-display text-foreground">Ratify</h1>
         <p className="text-body text-muted-foreground">Client delivery portal</p>

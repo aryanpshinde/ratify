@@ -24,7 +24,6 @@ export function LoginForm() {
         email: values.email,
         password: values.password,
       });
-
       if (res.error) {
         form.setError('root', {
           message: res.error.message || 'Invalid email or password. Please try again.',
@@ -39,13 +38,13 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-sm noise-overlay bg-card">
+    <Card className="w-full max-w-md noise-overlay bg-card [--card-spacing:--spacing(6)]">
       <CardHeader>
         <CardTitle className="text-h2">Welcome back</CardTitle>
         <CardDescription>Sign in to your Ratify account</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -53,27 +52,26 @@ export function LoginForm() {
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
+              className="h-9"
               aria-invalid={!!errors.email}
               {...form.register('email')}
             />
             {errors.email && <p className="text-sm text-error">{errors.email.message}</p>}
           </div>
-
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
               autoComplete="current-password"
+              className="h-9"
               aria-invalid={!!errors.password}
               {...form.register('password')}
             />
             {errors.password && <p className="text-sm text-error">{errors.password.message}</p>}
           </div>
-
           {errors.root?.message && <p className="text-sm text-error">{errors.root.message}</p>}
-
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
