@@ -4,9 +4,38 @@ import { projects, clients } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { logActivity } from '../lib/activity.js';
 import { createProjectSchema } from '@ratify/shared';
-import { eq, and } from 'drizzle-orm';
+import { desc, eq, and } from 'drizzle-orm';
 
 const projectRoutes = new Hono();
+
+projectRoutes.get('/', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const rows = await db
+    .select({
+      id: projects.id,
+      ownerId: projects.ownerId,
+      clientId: projects.clientId,
+      title: projects.title,
+      description: projects.description,
+      status: projects.status,
+      deadline: projects.deadline,
+      budgetDisplay: projects.budgetDisplay,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+      clientName: clients.name,
+      clientCompany: clients.company,
+    })
+    .from(projects)
+    .innerJoin(clients, eq(projects.clientId, clients.id))
+    .where(eq(projects.ownerId, session.user.id))
+    .orderBy(desc(projects.updatedAt));
+
+  return c.json({ status: 'ok', data: rows });
+});
 
 projectRoutes.post('/', async (c) => {
   const session = await getSession(c);
