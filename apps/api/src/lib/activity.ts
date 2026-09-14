@@ -1,4 +1,4 @@
-import { db } from '../db/index.js';
+import type { DbOrTx } from '../db/index.js';
 import { activityLogs } from '../db/schema.js';
 
 interface LogActivityInput {
@@ -10,8 +10,8 @@ interface LogActivityInput {
   metadata?: Record<string, unknown> | null;
 }
 
-export async function logActivity(input: LogActivityInput) {
-  await db.insert(activityLogs).values({
+export async function logActivity(input: LogActivityInput, tx: DbOrTx) {
+  await tx.insert(activityLogs).values({
     projectId: input.projectId,
     actorId: input.actorId,
     action: input.action,
