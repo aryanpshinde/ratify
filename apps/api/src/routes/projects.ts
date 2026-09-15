@@ -218,4 +218,27 @@ projectRoutes.patch('/:id', async (c) => {
   return c.json({ status: 'ok', data: updated });
 });
 
+projectRoutes.delete('/:id', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const { id } = c.req.param();
+
+  const [existing] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, id), eq(projects.ownerId, session.user.id)))
+    .limit(1);
+
+  if (!existing) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
+  await db.delete(projects).where(eq(projects.id, id));
+
+  return c.json({ status: 'ok', data: id });
+});
+
 export default projectRoutes;
