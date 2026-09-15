@@ -3,7 +3,9 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { PartyPopper } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProjects } from '@/hooks/projects/use-projects';
-import type { ProjectStatus } from '@ratify/shared';
+import type { ProjectStatus, ProjectListItem } from '@ratify/shared';
+import { useUpdateProject } from '@/hooks/projects/use-update-project';
+import { DeleteProjectDialog } from '@/components/projects/delete-project-dialog';
 import { ProjectCard } from '@/components/projects/project-card';
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
 import { ProjectsEmptyState } from '@/components/projects/projects-empty-state';
@@ -102,6 +104,17 @@ function DashboardHome() {
   const navigate = useNavigate();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState<ProjectListItem | null>(null);
+  const updateProject = useUpdateProject();
+
+  const handleToggleArchive = (project: ProjectListItem) => {
+    const archived = project.status === 'archived';
+    updateProject.mutate({
+      id: project.id,
+      data: { status: archived ? 'planning' : 'archived' },
+      successMessage: archived ? 'Project unarchived' : 'Project archived',
+    });
+  };
 
   useEffect(() => {
     if (!sessionStorage.getItem(JUST_SIGNED_UP_KEY)) return;
@@ -201,7 +214,12 @@ function DashboardHome() {
               </div>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {group.projects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onToggleArchive={handleToggleArchive}
+                    onDelete={setDeletingProject}
+                  />
                 ))}
               </div>
             </section>
@@ -214,7 +232,12 @@ function DashboardHome() {
               </summary>
               <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {dashboard.archived.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onToggleArchive={handleToggleArchive}
+                    onDelete={setDeletingProject}
+                  />
                 ))}
               </div>
             </details>
@@ -223,6 +246,11 @@ function DashboardHome() {
       )}
 
       <CreateProjectDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <DeleteProjectDialog
+        open={!!deletingProject}
+        onOpenChange={(o) => !o && setDeletingProject(null)}
+        project={deletingProject}
+      />
 
       <Dialog open={welcomeOpen} onOpenChange={setWelcomeOpen}>
         <DialogContent className="sm:max-w-md">
