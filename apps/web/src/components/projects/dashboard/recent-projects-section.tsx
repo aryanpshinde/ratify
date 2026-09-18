@@ -1,16 +1,7 @@
 import type { ProjectListItem } from '@ratify/shared';
 import { Card } from '@/components/ui/card';
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
-
-function formatRelativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
-}
+import { timeAgo } from '@/lib/format';
 
 interface RecentProjectsSectionProps {
   projects: ProjectListItem[];
@@ -31,7 +22,7 @@ export function RecentProjectsSection({ projects }: RecentProjectsSectionProps) 
               <div className="flex shrink-0 items-center gap-3">
                 <ProjectStatusBadge status={project.status} />
                 <span className="text-caption text-muted-foreground">
-                  {formatRelativeTime(project.updatedAt)}
+                  {timeAgo(project.updatedAt)}
                 </span>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { Archive, Banknote, Calendar, EllipsisVertical, Trash2 } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import type { ProjectListItem } from '@ratify/shared';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,14 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ProjectStatusBadge } from './project-status-badge';
-
-function formatDeadline(deadline: string) {
-  return new Date(`${deadline}T00:00:00`).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+import { formatDeadline } from '@/lib/format';
 
 interface ProjectCardProps {
   project: ProjectListItem;
@@ -32,7 +26,15 @@ export function ProjectCard({ project, onToggleArchive, onDelete }: ProjectCardP
     <Card className="noise-overlay transition-shadow duration-200 hover:shadow-md">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-h3">{project.title}</CardTitle>
+          <CardTitle className="text-h3">
+            <Link
+              to="/projects/$projectId"
+              params={{ projectId: project.id }}
+              className="transition-colors hover:text-accent"
+            >
+              {project.title}
+            </Link>
+          </CardTitle>
           <div className="flex shrink-0 items-center gap-1.5">
             <ProjectStatusBadge status={project.status} />
             <DropdownMenu>
