@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { projects, clients } from '../db/schema.js';
+import { projects, clients, activityLogs, users, projectMembers } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { logActivity } from '../lib/activity.js';
 import { createProjectSchema, updateProjectSchema } from '@ratify/shared';
@@ -239,6 +239,56 @@ projectRoutes.delete('/:id', async (c) => {
   await db.delete(projects).where(eq(projects.id, id));
 
   return c.json({ status: 'ok', data: id });
+});
+
+projectRoutes.get('/:id/activity', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const { id } = c.req.param();
+
+  const [project] = await db
+    .select({ id: projects.id, ownerId: projects.ownerId })
+    .from(projects)
+    .where(eq(projects.id, id))
+    .limit(1);
+
+  if (!project) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
+  if (project.ownerId !== session.user.id) {
+    const [membership] = await db
+      .select({ id: projectMembers.id })
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, id), eq(projectMembers.userId, session.user.id)))
+      .limit(1);
+
+    if (!membership) {
+      return c.json({ status: 'error', message: 'Project not found' }, 404);
+    }
+  }
+
+  const rows = await db
+    .select({
+      id: activityLogs.id,
+      projectId: activityLogs.projectId,
+      actorId: activityLogs.actorId,
+      actorName: users.name,
+      action: activityLogs.action,
+      targetType: activityLogs.targetType,
+      targetId: activityLogs.targetId,
+      metadata: activityLogs.metadata,
+      createdAt: activityLogs.createdAt,
+    })
+    .from(activityLogs)
+    .leftJoin(users, eq(activityLogs.actorId, users.id))
+    .where(eq(activityLogs.projectId, id))
+    .orderBy(desc(activityLogs.createdAt));
+
+  return c.json({ status: 'ok', data: rows });
 });
 
 export default projectRoutes;
