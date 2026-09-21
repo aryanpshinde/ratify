@@ -209,6 +209,34 @@ export const activityLogs = pgTable(
   ],
 );
 
+export const invitations = pgTable(
+  'invitations',
+  {
+    id: uuid('id')
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    invitedBy: uuid('invited_by').references(() => users.id, { onDelete: 'set null' }),
+    email: varchar('email', { length: 255 }).notNull(),
+    token: varchar('token', { length: 255 }).notNull().unique(),
+    expiresAt: timestamp('expires_at')
+      .notNull()
+      .default(sql`(now() + interval '7 days')`),
+    acceptedAt: timestamp('accepted_at'),
+    revokedAt: timestamp('revoked_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('invitations_projectId_idx').on(table.projectId),
+    index('invitations_invitedBy_idx').on(table.invitedBy),
+    uniqueIndex('invitations_one_active_per_project_email')
+      .on(table.projectId, sql`lower(${table.email})`)
+      .where(sql`accepted_at IS NULL AND revoked_at IS NULL`),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
@@ -217,6 +245,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   ownedProjects: many(projects),
   projectMemberships: many(projectMembers),
   activityLogs: many(activityLogs),
+  sentInvitations: many(invitations),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -258,6 +287,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   }),
   members: many(projectMembers),
   activityLogs: many(activityLogs),
+  invitations: many(invitations),
 }));
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
@@ -278,6 +308,17 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
   actor: one(users, {
     fields: [activityLogs.actorId],
+    references: [users.id],
+  }),
+}));
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+  project: one(projects, {
+    fields: [invitations.projectId],
+    references: [projects.id],
+  }),
+  invitedBy: one(users, {
+    fields: [invitations.invitedBy],
     references: [users.id],
   }),
 }));
