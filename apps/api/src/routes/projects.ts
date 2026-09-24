@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { db } from '../db/index.js';
 import { projects, clients, activityLogs, users, projectMembers } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
+import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
 import { createProjectSchema, updateProjectSchema } from '@ratify/shared';
 import { desc, eq, and } from 'drizzle-orm';
@@ -114,7 +115,10 @@ projectRoutes.get('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Unauthorized' }, 401);
   }
 
-  const { id } = c.req.param();
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
 
   const [project] = await db
     .select({
@@ -149,7 +153,10 @@ projectRoutes.patch('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Unauthorized' }, 401);
   }
 
-  const { id } = c.req.param();
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
 
   let body: unknown;
   try {
@@ -224,7 +231,10 @@ projectRoutes.delete('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Unauthorized' }, 401);
   }
 
-  const { id } = c.req.param();
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
 
   const [existing] = await db
     .select({ id: projects.id })
@@ -247,7 +257,10 @@ projectRoutes.get('/:id/activity', async (c) => {
     return c.json({ status: 'error', message: 'Unauthorized' }, 401);
   }
 
-  const { id } = c.req.param();
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
 
   const [project] = await db
     .select({ id: projects.id, ownerId: projects.ownerId })

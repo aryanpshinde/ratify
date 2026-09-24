@@ -14,7 +14,7 @@ const app = new Hono();
 
 app.use(logger());
 
-app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', (c) => auth.handler(c.req.raw));
+app.all('/api/auth/*', (c) => auth.handler(c.req.raw));
 
 app.route('/api/clients', clientRoutes);
 app.route('/api/projects', projectRoutes);
@@ -40,7 +40,7 @@ app.get('/api/db-health', async (c) => {
       {
         status: 'error',
         database: 'disconnected',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: isProd ? 'Database disconnected' : error instanceof Error ? error.message : 'Unknown error',
       },
       503,
     );

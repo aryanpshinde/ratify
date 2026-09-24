@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { db } from '../db/index.js';
 import { clients } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
+import { getUuidParam } from '../lib/params.js';
 import { createClientSchema, updateClientSchema } from '@ratify/shared';
 import { desc, eq, and, sql } from 'drizzle-orm';
 
@@ -82,7 +83,10 @@ clientRoutes.get('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Unauthorized' }, 401);
   }
 
-  const { id } = c.req.param();
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
 
   const [client] = await db
     .select()
@@ -103,7 +107,10 @@ clientRoutes.patch('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Unauthorized' }, 401);
   }
 
-  const { id } = c.req.param();
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
 
   let body: unknown;
   try {
@@ -165,7 +172,10 @@ clientRoutes.delete('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Unauthorized' }, 401);
   }
 
-  const { id } = c.req.param();
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
 
   const [existing] = await db
     .select({ id: clients.id })

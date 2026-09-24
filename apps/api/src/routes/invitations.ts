@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { db } from '../db/index.js';
 import { projects, clients, invitations } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
+import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
 import { createInvitationSchema } from '@ratify/shared';
 import { desc, eq, and, sql } from 'drizzle-orm';
@@ -15,7 +16,10 @@ invitationRoutes.post('/:projectId/invitations', async (c) => {
     return c.json({ status: 'error', message: 'Unauthorized' }, 401);
   }
 
-  const { projectId } = c.req.param();
+  const projectId = getUuidParam(c, 'projectId');
+  if (!projectId) {
+    return c.json({ status: 'error', message: 'Invalid projectId' }, 400);
+  }
 
   let body: unknown;
   try {
@@ -27,7 +31,7 @@ invitationRoutes.post('/:projectId/invitations', async (c) => {
   const parsed = createInvitationSchema.safeParse(body);
   if (!parsed.success) {
     return c.json(
-      { status: 'error', message: 'Validation Failed', issue: parsed.error.issues },
+      { status: 'error', message: 'Validation Failed', error: parsed.error.issues },
       400,
     );
   }
@@ -89,50 +93,62 @@ invitationRoutes.post('/:projectId/invitations', async (c) => {
   const token = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  const created = await db.transaction(async (tx) => {
-    for (const inv of existingInvites) {
-      if (inv.acceptedAt === null && inv.revokedAt === null && inv.expiresAt <= new Date()) {
-        await tx
-          .update(invitations)
-          .set({ revokedAt: new Date() })
-          .where(eq(invitations.id, inv.id));
+  try {
+    const created = await db.transaction(async (tx) => {
+      for (const inv of existingInvites) {
+        if (inv.acceptedAt === null && inv.revokedAt === null && inv.expiresAt <= new Date()) {
+          await tx
+            .update(invitations)
+            .set({ revokedAt: new Date() })
+            .where(eq(invitations.id, inv.id));
+        }
       }
+
+      const [row] = await tx
+        .insert(invitations)
+        .values({
+          projectId,
+          invitedBy: session.user.id,
+          email: parsed.data.email,
+          token,
+          expiresAt,
+        })
+        .returning();
+
+      if (!row) {
+        return null;
+      }
+
+      await logActivity(
+        {
+          projectId,
+          actorId: session.user.id,
+          action: 'client_invited',
+          targetType: 'invitation',
+          targetId: row.id,
+        },
+        tx,
+      );
+
+      return row;
+    });
+
+    if (!created) {
+      return c.json({ status: 'error', message: 'Failed to create invitation' }, 500);
     }
 
-    const [row] = await tx
-      .insert(invitations)
-      .values({
-        projectId,
-        invitedBy: session.user.id,
-        email: parsed.data.email,
-        token,
-        expiresAt,
-      })
-      .returning();
-
-    if (!row) {
-      return null;
+    return c.json({ status: 'ok', data: created }, 201);
+  } catch (err: unknown) {
+    const code =
+      (err as { code?: unknown }).code ?? (err as { cause?: { code?: unknown } }).cause?.code;
+    if (code === '23505') {
+      return c.json(
+        { status: 'error', message: 'An active invitation already exists for this email' },
+        409,
+      );
     }
-
-    await logActivity(
-      {
-        projectId,
-        actorId: session.user.id,
-        action: 'client_invited',
-        targetType: 'invitation',
-        targetId: row.id,
-      },
-      tx,
-    );
-
-    return row;
-  });
-
-  if (!created) {
-    return c.json({ status: 'error', message: 'Failed to create invitation' }, 500);
+    throw err;
   }
-
-  return c.json({ status: 'ok', data: created }, 201);
 });
 
 export default invitationRoutes;
