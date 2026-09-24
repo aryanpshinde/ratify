@@ -1,4 +1,4 @@
-const dateFormatter = new Intl.DateTimeFormat('en-us', {
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
   year: 'numeric',
@@ -20,7 +20,7 @@ export function timeAgo(date: Date | string): string {
 }
 
 export function formatDeadline(deadline: string): string {
-  return new Date(`${deadline}T00:00:00`).toLocaleDateString(undefined, {
+  return new Date(`${deadline}T00:00:00`).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
