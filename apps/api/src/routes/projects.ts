@@ -29,6 +29,7 @@ projectRoutes.get('/', async (c) => {
       updatedAt: projects.updatedAt,
       clientName: clients.name,
       clientCompany: clients.company,
+      clientEmail: clients.email,
     })
     .from(projects)
     .innerJoin(clients, eq(projects.clientId, clients.id))
@@ -134,6 +135,7 @@ projectRoutes.get('/:id', async (c) => {
       updatedAt: projects.updatedAt,
       clientName: clients.name,
       clientCompany: clients.company,
+      clientEmail: clients.email,
     })
     .from(projects)
     .innerJoin(clients, eq(projects.clientId, clients.id))

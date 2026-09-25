@@ -40,7 +40,11 @@ app.get('/api/db-health', async (c) => {
       {
         status: 'error',
         database: 'disconnected',
-        message: isProd ? 'Database disconnected' : error instanceof Error ? error.message : 'Unknown error',
+        message: isProd
+          ? 'Database disconnected'
+          : error instanceof Error
+            ? error.message
+            : 'Unknown error',
       },
       503,
     );

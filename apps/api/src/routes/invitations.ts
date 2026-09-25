@@ -10,6 +10,36 @@ import { desc, eq, and, sql } from 'drizzle-orm';
 
 const invitationRoutes = new Hono();
 
+invitationRoutes.get('/:projectId/invitations', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const projectId = getUuidParam(c, 'projectId');
+  if (!projectId) {
+    return c.json({ status: 'error', message: 'Invalid projectId' }, 400);
+  }
+
+  const [project] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, session.user.id)))
+    .limit(1);
+
+  if (!project) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
+  const rows = await db
+    .select()
+    .from(invitations)
+    .where(eq(invitations.projectId, projectId))
+    .orderBy(desc(invitations.createdAt));
+
+  return c.json({ status: 'ok', data: rows });
+});
+
 invitationRoutes.post('/:projectId/invitations', async (c) => {
   const session = await getSession(c);
   if (!session) {
