@@ -55,6 +55,7 @@ export const projectResponseSchema = z.object({
 export const projectListItemSchema = projectResponseSchema.extend({
   clientName: z.string(),
   clientCompany: z.string().nullable(),
+  clientEmail: z.email(),
 });
 
 export type ProjectStatus = z.infer<typeof projectStatusSchema>;
