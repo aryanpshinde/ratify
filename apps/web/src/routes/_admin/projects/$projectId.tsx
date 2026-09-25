@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Banknote, Calendar } from 'lucide-react';
+import { ArrowLeft, Banknote, Calendar, UserPlus } from 'lucide-react';
 import { useProject } from '@/hooks/projects/use-project';
 import { ActivityFeed } from '@/components/projects/activity-feed';
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
@@ -7,6 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDeadline } from '@/lib/format';
+import { useInvitations } from '@/hooks/projects/use-invitations';
+import { InviteClientDialog } from '@/components/projects/invite-client-dialog';
+import { PendingInvitationsList } from '@/components/projects/pending-invitations-list';
 
 export const Route = createFileRoute('/_admin/projects/$projectId')({
   component: ProjectDetailPage,
@@ -33,6 +37,12 @@ function ProjectDetailSkeleton() {
 function ProjectDetailPage() {
   const { projectId } = Route.useParams();
   const { data: project, isPending, isError } = useProject(projectId);
+  const {
+    data: invitations,
+    isPending: invitesPending,
+    isError: invitesError,
+  } = useInvitations(projectId);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   if (isPending) return <ProjectDetailSkeleton />;
 
@@ -127,6 +137,28 @@ function ProjectDetailPage() {
           </Card>
         </div>
       </div>
+      <Card className="noise-overlay">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-h3">Client Access</CardTitle>
+            <Button size="sm" onClick={() => setInviteOpen(true)}>
+              <UserPlus />
+              Invite Client
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <PendingInvitationsList
+            invitations={invitations}
+            isPending={invitesPending}
+            isError={invitesError}
+          />
+        </CardContent>
+      </Card>
+
+      {project && (
+        <InviteClientDialog open={inviteOpen} onOpenChange={setInviteOpen} project={project} />
+      )}
     </div>
   );
 }
