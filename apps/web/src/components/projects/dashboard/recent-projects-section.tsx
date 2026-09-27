@@ -21,7 +21,7 @@ export function RecentProjectsSection({ projects }: RecentProjectsSectionProps) 
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <ProjectStatusBadge status={project.status} />
-                <span className="text-caption text-muted-foreground">
+                <span className="font-mono text-caption text-muted-foreground tabular-nums">
                   {timeAgo(project.updatedAt)}
                 </span>
               </div>

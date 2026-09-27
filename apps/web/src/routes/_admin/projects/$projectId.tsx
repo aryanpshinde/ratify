@@ -102,27 +102,31 @@ function ProjectDetailPage() {
         </div>
 
         <div className="space-y-4">
-          <Card className="noise-overlay">
-            <CardHeader>
-              <CardTitle className="text-h3">Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-body">
-                {project.deadline && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar size={16} strokeWidth={1.5} aria-hidden="true" />
-                    <span>Due {formatDeadline(project.deadline)}</span>
-                  </div>
-                )}
-                {project.budgetDisplay && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Banknote size={16} strokeWidth={1.5} aria-hidden="true" />
-                    <span>{project.budgetDisplay}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {(project.deadline || project.budgetDisplay) && (
+            <Card className="noise-overlay">
+              <CardHeader>
+                <CardTitle className="text-h3">Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-body">
+                  {project.deadline && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar size={16} strokeWidth={1.5} aria-hidden="true" />
+                      <span className="font-mono tabular-nums">
+                        Due {formatDeadline(project.deadline)}
+                      </span>
+                    </div>
+                  )}
+                  {project.budgetDisplay && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Banknote size={16} strokeWidth={1.5} aria-hidden="true" />
+                      <span className="font-mono tabular-nums">{project.budgetDisplay}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="noise-overlay">
             <CardHeader>

@@ -55,7 +55,7 @@ export function DashboardLayout({ session, children }: DashboardLayoutProps) {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-end">
-              <span className="text-caption text-muted-foreground">{session.user.email}</span>
+              <span className="font-mono text-caption text-muted-foreground">{session.user.email}</span>
             </div>
             <Button variant="outline" onClick={handleLogout} disabled={loggingOut}>
               {loggingOut ? 'Logging Out...' : 'Log Out'}

@@ -4,19 +4,19 @@ import { cn } from '@/lib/utils';
 const STATUS_CONFIG: Record<ProjectStatus, { label: string; className: string }> = {
   planning: {
     label: 'Planning',
-    className: 'bg-info-subtle text-info border-info/20',
+    className: 'bg-info-subtle text-info/85 border-info/10',
   },
   in_progress: {
     label: 'In Progress',
-    className: 'bg-info-subtle text-info border-info/20',
+    className: 'bg-info-subtle text-info/85 border-info/10',
   },
   review: {
     label: 'Review',
-    className: 'bg-warning-subtle text-warning border-warning/20',
+    className: 'bg-warning-subtle text-warning/85 border-warning/10',
   },
   completed: {
     label: 'Completed',
-    className: 'bg-success-subtle text-success border-success/20',
+    className: 'bg-success-subtle text-success/85 border-success/10',
   },
   archived: {
     label: 'Archived',
@@ -35,7 +35,7 @@ export function ProjectStatusBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-sm border px-2 py-0.5 text-micro whitespace-nowrap',
+        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-micro whitespace-nowrap',
         config.className,
         className,
       )}

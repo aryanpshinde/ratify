@@ -72,13 +72,13 @@ export function ProjectCard({ project, onToggleArchive, onDelete }: ProjectCardP
         <CardContent>
           <div className="flex flex-wrap items-center gap-4 text-caption text-muted-foreground">
             {project.deadline && (
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 font-mono">
                 <Calendar size={16} strokeWidth={1.5} aria-hidden="true" />
                 Due {formatDeadline(project.deadline)}
               </span>
             )}
             {project.budgetDisplay && (
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 font-mono">
                 <Banknote size={16} strokeWidth={1.5} aria-hidden="true" />
                 {project.budgetDisplay}
               </span>

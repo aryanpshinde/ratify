@@ -20,7 +20,7 @@ function ClientsListSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
+          className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-sm"
         >
           <div className="space-y-2">
             <Skeleton className="h-5 w-48" />
@@ -39,6 +39,8 @@ function ClientsPage() {
   const [editingClient, setEditingClient] = useState<ClientResponse | null>(null);
   const [deletingClient, setDeletingClient] = useState<ClientResponse | null>(null);
 
+  const isEmpty = !isPending && !isError && clients?.length === 0;
+
   useEffect(() => {
     if (isError) {
       toast.error('Failed to load clients', {
@@ -52,7 +54,9 @@ function ClientsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-h1 text-foreground">Clients</h2>
-        <Button onClick={() => setCreateOpen(true)}>New Client</Button>
+        <Button variant={isEmpty ? 'outline' : 'default'} onClick={() => setCreateOpen(true)}>
+          New Client
+        </Button>
       </div>
 
       {isPending && <ClientsListSkeleton />}
@@ -66,11 +70,11 @@ function ClientsPage() {
           {clients.map((client) => (
             <div
               key={client.id}
-              className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+              className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50"
             >
               <div>
                 <p className="text-body font-medium text-foreground">{client.name}</p>
-                <p className="text-caption text-muted-foreground">
+                <p className="font-mono text-caption text-muted-foreground">
                   {client.company || client.email || 'No company or email'}
                 </p>
               </div>

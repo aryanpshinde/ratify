@@ -55,7 +55,10 @@ function ActivityFeedEmpty() {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
       <History size={32} strokeWidth={1.5} aria-hidden="true" className="text-muted-foreground" />
-      <p className="mt-3 text-body text-muted-foreground">No activity yet</p>
+      <p className="mt-3 text-body font-medium text-foreground">No activity yet</p>
+      <p className="mt-1 max-w-xs text-caption text-muted-foreground">
+        Project events will appear here as you create deliverables and invite clients.
+      </p>
     </div>
   );
 }
@@ -90,7 +93,7 @@ export function ActivityFeed({ projectId }: ActivityFeedProps) {
             {item.action === 'project_status_changed' && (
               <StatusChangeMetadata metadata={item.metadata} />
             )}
-            <p className="mt-0.5 text-caption text-muted-foreground">{timeAgo(item.createdAt)}</p>
+            <p className="mt-0.5 font-mono text-caption text-muted-foreground tabular-nums">{timeAgo(item.createdAt)}</p>
           </div>
         </div>
       ))}

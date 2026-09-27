@@ -15,7 +15,7 @@ export function ArchivedProjectsSection({
   return (
     <details>
       <summary className="cursor-pointer text-body-sm text-muted-foreground transition-colors hover:text-foreground">
-        Archived ({projects.length})
+        Archived <span className="font-mono tabular-nums">({projects.length})</span>
       </summary>
       <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project) => (

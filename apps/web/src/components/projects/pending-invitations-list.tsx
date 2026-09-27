@@ -13,7 +13,7 @@ function getStatus(invitation: InvitationResponse): {
   if (invitation.acceptedAt) {
     return {
       label: 'Accepted',
-      className: 'bg-success-subtle text-success border-success/20',
+      className: 'bg-success-subtle text-success/85 border-success/10',
     };
   }
   if (invitation.revokedAt) {
@@ -25,12 +25,12 @@ function getStatus(invitation: InvitationResponse): {
   if (new Date(invitation.expiresAt) < new Date()) {
     return {
       label: 'Expired',
-      className: 'bg-error-subtle text-error border-error/20',
+      className: 'bg-error-subtle text-error/85 border-error/10',
     };
   }
   return {
     label: 'Pending',
-    className: 'bg-warning-subtle text-warning border-warning/20',
+    className: 'bg-warning-subtle text-warning/85 border-warning/10',
   };
 }
 
@@ -62,7 +62,7 @@ function InvitationsSkeleton() {
       {[1, 2].map((i) => (
         <div
           key={i}
-          className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
+          className="flex items-center justify-between rounded-lg border border-border bg-card p-3 shadow-sm"
         >
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-48" />
@@ -107,17 +107,17 @@ export function PendingInvitationsList({
         return (
           <div
             key={invitation.id}
-            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/50"
+            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-muted/50"
           >
             <div className="min-w-0">
-              <p className="truncate text-body font-medium text-foreground">{invitation.email}</p>
-              <p className="text-caption text-muted-foreground">
+              <p className="truncate font-mono text-body font-medium text-foreground">{invitation.email}</p>
+              <p className="font-mono text-caption text-muted-foreground tabular-nums">
                 Expires {formatDate(invitation.expiresAt)}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <span
-                className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-micro whitespace-nowrap ${status.className}`}
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-micro whitespace-nowrap ${status.className}`}
               >
                 {status.label}
               </span>

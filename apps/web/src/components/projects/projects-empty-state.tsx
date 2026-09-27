@@ -7,7 +7,7 @@ interface ProjectsEmptyStateProps {
 
 export function ProjectsEmptyState({ onCreateClick }: ProjectsEmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12 text-center">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12 text-center shadow-sm noise-overlay">
       <FolderKanban
         size={64}
         strokeWidth={1}

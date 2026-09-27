@@ -20,7 +20,7 @@ export function ProjectStatusSection({
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <h3 className="text-h2 text-foreground">{group.label}</h3>
-        <span className="text-caption text-muted-foreground">{group.projects.length}</span>
+        <span className="font-mono text-caption text-muted-foreground tabular-nums">{group.projects.length}</span>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {group.projects.map((project) => (

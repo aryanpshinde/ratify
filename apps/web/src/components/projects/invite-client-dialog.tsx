@@ -42,7 +42,7 @@ export function InviteClientDialog({ open, onOpenChange, project }: InviteClient
           <DialogDescription>
             Send a portal access invite to{' '}
             <span className="font-medium text-foreground">{project.clientName}</span> at{' '}
-            <span className="font-medium text-foreground">{project.clientEmail}</span>?
+            <span className="font-mono font-medium text-foreground">{project.clientEmail}</span>?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

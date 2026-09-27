@@ -103,9 +103,23 @@ function DashboardHome() {
       {!isPending && !isError && dashboard && dashboard.total > 0 && (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Active Projects" value={dashboard.counts.active} />
-            <StatCard label="Awaiting Review" value={dashboard.counts.review} />
-            <StatCard label="Completed" value={dashboard.counts.completed} />
+            <StatCard
+              label="Active Projects"
+              value={dashboard.counts.active}
+              hint={
+                dashboard.counts.active === 0 ? 'Create a project to get started' : undefined
+              }
+            />
+            <StatCard
+              label="Awaiting Review"
+              value={dashboard.counts.review}
+              hint={dashboard.counts.review === 0 ? 'Nothing waiting on clients' : undefined}
+            />
+            <StatCard
+              label="Completed"
+              value={dashboard.counts.completed}
+              hint={dashboard.counts.completed === 0 ? 'Finished work will show here' : undefined}
+            />
           </div>
 
           <RecentProjectsSection projects={dashboard.recent} />

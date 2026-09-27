@@ -7,7 +7,7 @@ interface ClientsEmptyStateProps {
 
 export function ClientsEmptyState({ onCreateClick }: ClientsEmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12 text-center">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12 text-center shadow-sm noise-overlay">
       <Users size={64} strokeWidth={1} aria-hidden="true" className="text-muted-foreground" />
       <h3 className="mt-6 text-h2 text-foreground">No clients yet</h3>
       <p className="mt-2 max-w-sm text-body text-muted-foreground">

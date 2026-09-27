@@ -5,7 +5,7 @@ export function DashboardSkeleton() {
     <div className="space-y-8">
       <div className="grid gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-lg border border-border bg-card p-5">
+          <div key={i} className="rounded-lg border border-border bg-card p-5 shadow-sm">
             <Skeleton className="h-4 w-28" />
             <Skeleton className="mt-3 h-8 w-14" />
           </div>
@@ -17,7 +17,7 @@ export function DashboardSkeleton() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
+              className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-sm"
             >
               <div className="space-y-2">
                 <Skeleton className="h-4 w-48" />
@@ -32,7 +32,7 @@ export function DashboardSkeleton() {
         <Skeleton className="h-7 w-32" />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-lg border border-border bg-card p-5">
+            <div key={i} className="rounded-lg border border-border bg-card p-5 shadow-sm">
               <Skeleton className="h-5 w-40" />
               <Skeleton className="mt-2 h-4 w-28" />
               <Skeleton className="mt-4 h-4 w-32" />
