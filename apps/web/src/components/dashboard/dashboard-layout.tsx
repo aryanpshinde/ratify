@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { signOut } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/lib/utils';
 
 interface DashboardLayoutProps {
   session: {
@@ -53,9 +55,18 @@ export function DashboardLayout({ session, children }: DashboardLayoutProps) {
               </Link>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Avatar>
+              {session.user.image && (
+                <AvatarImage src={session.user.image} alt={session.user.name} />
+              )}
+              <AvatarFallback>{getInitials(session.user.name, session.user.email)}</AvatarFallback>
+            </Avatar>
             <div className="flex flex-col items-end">
-              <span className="font-mono text-caption text-muted-foreground">{session.user.email}</span>
+              <span className="text-body-sm font-medium text-foreground">{session.user.name}</span>
+              <span className="font-mono text-caption text-muted-foreground">
+                {session.user.email}
+              </span>
             </div>
             <Button variant="outline" onClick={handleLogout} disabled={loggingOut}>
               {loggingOut ? 'Logging Out...' : 'Log Out'}

@@ -16,19 +16,25 @@ export const Route = createFileRoute('/_admin/clients')({
 
 function ClientsListSkeleton() {
   return (
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-sm"
-        >
-          <div className="space-y-2">
-            <Skeleton className="h-5 w-48" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-          <Skeleton className="h-8 w-24" />
-        </div>
-      ))}
+    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <table className="w-full text-body-sm">
+        <tbody className="divide-y divide-border-subtle">
+          {[1, 2, 3].map((i) => (
+            <tr key={i}>
+              <td className="px-4 py-3">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="mt-1.5 h-4 w-32" />
+              </td>
+              <td className="hidden px-4 py-3 sm:table-cell">
+                <Skeleton className="h-4 w-40" />
+              </td>
+              <td className="px-4 py-3 text-right">
+                <Skeleton className="ml-auto h-8 w-24" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -66,28 +72,57 @@ function ClientsPage() {
       )}
 
       {!isPending && !isError && clients && clients.length > 0 && (
-        <div className="space-y-3">
-          {clients.map((client) => (
-            <div
-              key={client.id}
-              className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50"
-            >
-              <div>
-                <p className="text-body font-medium text-foreground">{client.name}</p>
-                <p className="font-mono text-caption text-muted-foreground">
-                  {client.company || client.email || 'No company or email'}
-                </p>
-              </div>
-              <div>
-                <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}>
-                  Edit
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setDeletingClient(client)}>
-                  Delete
-                </Button>
-              </div>
-            </div>
-          ))}
+        <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm noise-overlay">
+          <table className="w-full text-body-sm">
+            <thead>
+              <tr className="bg-surface-raised text-left">
+                <th scope="col" className="px-4 py-2.5 font-medium text-caption text-muted-foreground">
+                  Client
+                </th>
+                <th
+                  scope="col"
+                  className="hidden px-4 py-2.5 font-medium text-caption text-muted-foreground sm:table-cell"
+                >
+                  Contact
+                </th>
+                <th
+                  scope="col"
+                  className="hidden px-4 py-2.5 font-medium text-caption text-muted-foreground md:table-cell"
+                >
+                  Company
+                </th>
+                <th scope="col" className="px-4 py-2.5">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {clients.map((client) => (
+                <tr key={client.id} className="transition-colors hover:bg-surface-raised">
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    {client.name}
+                    <span className="mt-0.5 block font-mono text-caption font-normal text-muted-foreground sm:hidden">
+                      {client.email}
+                    </span>
+                  </td>
+                  <td className="hidden px-4 py-3 font-mono text-muted-foreground sm:table-cell">
+                    {client.email}
+                  </td>
+                  <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
+                    {client.company || <span className="text-muted-foreground/60">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}>
+                      Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeletingClient(client)}>
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

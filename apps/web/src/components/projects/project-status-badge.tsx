@@ -1,27 +1,15 @@
 import type { ProjectStatus } from '@ratify/shared';
-import { cn } from '@/lib/utils';
+import { Badge, type badgeVariants } from '@/components/ui/badge';
+import type { VariantProps } from 'class-variance-authority';
 
-const STATUS_CONFIG: Record<ProjectStatus, { label: string; className: string }> = {
-  planning: {
-    label: 'Planning',
-    className: 'bg-info-subtle text-info/85 border-info/10',
-  },
-  in_progress: {
-    label: 'In Progress',
-    className: 'bg-info-subtle text-info/85 border-info/10',
-  },
-  review: {
-    label: 'Review',
-    className: 'bg-warning-subtle text-warning/85 border-warning/10',
-  },
-  completed: {
-    label: 'Completed',
-    className: 'bg-success-subtle text-success/85 border-success/10',
-  },
-  archived: {
-    label: 'Archived',
-    className: 'bg-muted text-muted-foreground border-border',
-  },
+type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>;
+
+const STATUS_CONFIG: Record<ProjectStatus, { label: string; variant: BadgeVariant }> = {
+  planning: { label: 'Planning', variant: 'info' },
+  in_progress: { label: 'In Progress', variant: 'info' },
+  review: { label: 'Review', variant: 'warning' },
+  completed: { label: 'Completed', variant: 'success' },
+  archived: { label: 'Archived', variant: 'muted' },
 };
 
 export function ProjectStatusBadge({
@@ -33,14 +21,8 @@ export function ProjectStatusBadge({
 }) {
   const config = STATUS_CONFIG[status];
   return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-micro whitespace-nowrap',
-        config.className,
-        className,
-      )}
-    >
+    <Badge variant={config.variant} className={className}>
       {config.label}
-    </span>
+    </Badge>
   );
 }

@@ -6,6 +6,7 @@ import { ActivityFeed } from '@/components/projects/activity-feed';
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDeadline } from '@/lib/format';
 import { useInvitations } from '@/hooks/projects/use-invitations';
@@ -63,9 +64,16 @@ function ProjectDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link to="/">
-          <Button variant="ghost" size="icon-sm" aria-label="Back to dashboard">
-            <ArrowLeft />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button variant="ghost" size="icon-sm" aria-label="Back to dashboard">
+                  <ArrowLeft />
+                </Button>
+              }
+            />
+            <TooltipContent>Back to dashboard</TooltipContent>
+          </Tooltip>
         </Link>
         <div className="flex items-center gap-3">
           <h2 className="text-h1 text-foreground">{project.title}</h2>

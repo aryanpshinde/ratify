@@ -4,34 +4,27 @@ import { toast } from 'sonner';
 import type { InvitationResponse } from '@ratify/shared';
 import { formatDate } from '@/lib/format';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge, type badgeVariants } from '@/components/ui/badge';
+import type { VariantProps } from 'class-variance-authority';
 import { Skeleton } from '@/components/ui/skeleton';
+
+type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>;
 
 function getStatus(invitation: InvitationResponse): {
   label: string;
-  className: string;
+  variant: BadgeVariant;
 } {
   if (invitation.acceptedAt) {
-    return {
-      label: 'Accepted',
-      className: 'bg-success-subtle text-success/85 border-success/10',
-    };
+    return { label: 'Accepted', variant: 'success' };
   }
   if (invitation.revokedAt) {
-    return {
-      label: 'Revoked',
-      className: 'bg-muted text-muted-foreground border-border',
-    };
+    return { label: 'Revoked', variant: 'muted' };
   }
   if (new Date(invitation.expiresAt) < new Date()) {
-    return {
-      label: 'Expired',
-      className: 'bg-error-subtle text-error/85 border-error/10',
-    };
+    return { label: 'Expired', variant: 'error' };
   }
-  return {
-    label: 'Pending',
-    className: 'bg-warning-subtle text-warning/85 border-warning/10',
-  };
+  return { label: 'Pending', variant: 'warning' };
 }
 
 function CopyLinkButton({ token }: { token: string }) {
@@ -50,9 +43,21 @@ function CopyLinkButton({ token }: { token: string }) {
   };
 
   return (
-    <Button variant="ghost" size="icon-sm" onClick={handleCopy} aria-label="Copy invitation link">
-      {copied ? <Check className="text-success" /> : <Link />}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleCopy}
+            aria-label="Copy invitation link"
+          />
+        }
+      >
+        {copied ? <Check className="text-success" /> : <Link />}
+      </TooltipTrigger>
+      <TooltipContent>{copied ? 'Copied!' : 'Copy invitation link'}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -116,11 +121,7 @@ export function PendingInvitationsList({
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <span
-                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-micro whitespace-nowrap ${status.className}`}
-              >
-                {status.label}
-              </span>
+              <Badge variant={status.variant}>{status.label}</Badge>
               <CopyLinkButton token={invitation.token} />
             </div>
           </div>

@@ -1,14 +1,25 @@
-import { useForm, useWatch } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
+import { CalendarIcon, XIcon } from 'lucide-react';
 import { createProjectSchema, type CreateProjectInput } from '@ratify/shared';
 import { ApiError } from '@/lib/api';
 import { applyValidationIssues } from '@/lib/form-errors';
+import {
+  formatDDMMYY,
+  isISODate,
+  isoToDDMMYY,
+  parseDDMMYYtoISO,
+  toISODate,
+} from '@/lib/format';
 import { useCreateProject } from '@/hooks/projects/use-create-project';
 import { useClients } from '@/hooks/clients/use-clients';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -35,6 +46,8 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
   const createProject = useCreateProject();
   const { data: clients, isPending: clientsPending } = useClients();
   const navigate = useNavigate();
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [deadlineText, setDeadlineText] = useState('');
 
   const {
     register,
@@ -67,6 +80,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     createProject.mutate(values, {
       onSuccess: () => {
         reset();
+        setDeadlineText('');
         onOpenChange(false);
       },
       onError: (error) => {
@@ -82,6 +96,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       reset();
+      setDeadlineText('');
     }
     onOpenChange(nextOpen);
   };
@@ -167,12 +182,83 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                 <Label htmlFor="project-deadline">
                   Deadline <span className="text-muted-foreground">(optional)</span>
                 </Label>
-                <Input
-                  id="project-deadline"
-                  type="date"
-                  {...register('deadline', {
-                    setValueAs: (value: string) => (value === '' ? undefined : value),
-                  })}
+                <Controller
+                  control={control}
+                  name="deadline"
+                  render={({ field }) => (
+                    <div className="flex gap-2">
+                      <Input
+                        id="project-deadline"
+                        placeholder="DD-MM-YYYY"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        maxLength={10}
+                        value={deadlineText}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                          setDeadlineText(formatDDMMYY(digits));
+                          if (digits.length === 0) {
+                            field.onChange(undefined);
+                          } else {
+                            field.onChange(parseDDMMYYtoISO(digits) ?? formatDDMMYY(digits));
+                          }
+                        }}
+                        onBlur={field.onBlur}
+                        aria-invalid={!!errors.deadline}
+                        className="font-mono tabular-nums"
+                      />
+                      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                        <PopoverTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              aria-label="Choose deadline from calendar"
+                            />
+                          }
+                        >
+                          <CalendarIcon aria-hidden="true" />
+                        </PopoverTrigger>
+                        <PopoverContent align="end" className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            fixedWeeks
+                            selected={
+                              isISODate(field.value)
+                                ? new Date(`${field.value}T00:00:00`)
+                                : undefined
+                            }
+                            onSelect={(day) => {
+                              if (day) {
+                                field.onChange(toISODate(day));
+                                setDeadlineText(isoToDDMMYY(toISODate(day)));
+                                setDatePickerOpen(false);
+                              } else {
+                                field.onChange(undefined);
+                              }
+                            }}
+                          />
+                          <div className="border-t border-border p-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="w-full"
+                              disabled={!field.value}
+                              onClick={() => {
+                                field.onChange(undefined);
+                                setDeadlineText('');
+                              }}
+                            >
+                              <XIcon aria-hidden="true" />
+                              Clear date
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
                 />
                 {errors.deadline && (
                   <p className="text-caption text-error">{errors.deadline.message}</p>
