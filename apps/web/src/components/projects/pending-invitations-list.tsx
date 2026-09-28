@@ -115,7 +115,9 @@ export function PendingInvitationsList({
             className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-muted/50"
           >
             <div className="min-w-0">
-              <p className="truncate font-mono text-body font-medium text-foreground">{invitation.email}</p>
+              <p className="truncate font-mono text-body font-medium text-foreground">
+                {invitation.email}
+              </p>
               <p className="font-mono text-caption text-muted-foreground tabular-nums">
                 Expires {formatDate(invitation.expiresAt)}
               </p>

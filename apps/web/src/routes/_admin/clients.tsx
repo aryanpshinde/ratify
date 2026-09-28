@@ -76,7 +76,10 @@ function ClientsPage() {
           <table className="w-full text-body-sm">
             <thead>
               <tr className="bg-surface-raised text-left">
-                <th scope="col" className="px-4 py-2.5 font-medium text-caption text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-2.5 font-medium text-caption text-muted-foreground"
+                >
                   Client
                 </th>
                 <th

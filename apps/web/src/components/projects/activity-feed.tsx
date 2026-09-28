@@ -93,7 +93,9 @@ export function ActivityFeed({ projectId }: ActivityFeedProps) {
             {item.action === 'project_status_changed' && (
               <StatusChangeMetadata metadata={item.metadata} />
             )}
-            <p className="mt-0.5 font-mono text-caption text-muted-foreground tabular-nums">{timeAgo(item.createdAt)}</p>
+            <p className="mt-0.5 font-mono text-caption text-muted-foreground tabular-nums">
+              {timeAgo(item.createdAt)}
+            </p>
           </div>
         </div>
       ))}

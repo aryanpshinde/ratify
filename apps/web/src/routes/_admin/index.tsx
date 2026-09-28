@@ -106,9 +106,7 @@ function DashboardHome() {
             <StatCard
               label="Active Projects"
               value={dashboard.counts.active}
-              hint={
-                dashboard.counts.active === 0 ? 'Create a project to get started' : undefined
-              }
+              hint={dashboard.counts.active === 0 ? 'Create a project to get started' : undefined}
             />
             <StatCard
               label="Awaiting Review"

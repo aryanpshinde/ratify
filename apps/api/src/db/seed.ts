@@ -150,7 +150,9 @@ async function main() {
     clientIdByEmail.set(c.email.toLowerCase(), row.id);
     clientsAdded += 1;
   }
-  console.log(`Clients: +${clientsAdded} (skipped ${SEED_CLIENTS.length - clientsAdded} existing).`);
+  console.log(
+    `Clients: +${clientsAdded} (skipped ${SEED_CLIENTS.length - clientsAdded} existing).`,
+  );
 
   // 3. Projects (skip titles already present for this owner).
   const existingProjects = await db.select().from(projects).where(eq(projects.ownerId, owner.id));
