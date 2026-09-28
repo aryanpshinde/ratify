@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { projects, clients, activityLogs, users, projectMembers } from '../db/schema.js';
+import { projects, clients, activityLogs, users } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
+import { requireProjectAccess } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
 import { createProjectSchema, updateProjectSchema } from '@ratify/shared';
@@ -121,6 +122,11 @@ projectRoutes.get('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Invalid id' }, 400);
   }
 
+  const access = await requireProjectAccess(db, id, session.user.id);
+  if (!access) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
   const [project] = await db
     .select({
       id: projects.id,
@@ -139,7 +145,7 @@ projectRoutes.get('/:id', async (c) => {
     })
     .from(projects)
     .innerJoin(clients, eq(projects.clientId, clients.id))
-    .where(and(eq(projects.id, id), eq(projects.ownerId, session.user.id)))
+    .where(eq(projects.id, id))
     .limit(1);
 
   if (!project) {
@@ -175,10 +181,19 @@ projectRoutes.patch('/:id', async (c) => {
     );
   }
 
+  const access = await requireProjectAccess(db, id, session.user.id);
+  if (!access) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
+  if (!access.isOwner && access.role !== 'admin') {
+    return c.json({ status: 'error', message: 'Forbidden' }, 403);
+  }
+
   const [existing] = await db
     .select({ id: projects.id, status: projects.status })
     .from(projects)
-    .where(and(eq(projects.id, id), eq(projects.ownerId, session.user.id)))
+    .where(eq(projects.id, id))
     .limit(1);
 
   if (!existing) {
@@ -264,26 +279,9 @@ projectRoutes.get('/:id/activity', async (c) => {
     return c.json({ status: 'error', message: 'Invalid id' }, 400);
   }
 
-  const [project] = await db
-    .select({ id: projects.id, ownerId: projects.ownerId })
-    .from(projects)
-    .where(eq(projects.id, id))
-    .limit(1);
-
-  if (!project) {
+  const access = await requireProjectAccess(db, id, session.user.id);
+  if (!access) {
     return c.json({ status: 'error', message: 'Project not found' }, 404);
-  }
-
-  if (project.ownerId !== session.user.id) {
-    const [membership] = await db
-      .select({ id: projectMembers.id })
-      .from(projectMembers)
-      .where(and(eq(projectMembers.projectId, id), eq(projectMembers.userId, session.user.id)))
-      .limit(1);
-
-    if (!membership) {
-      return c.json({ status: 'error', message: 'Project not found' }, 404);
-    }
   }
 
   const rows = await db
