@@ -221,8 +221,6 @@
   --color-surface-raised: var(--surface-raised);
   --color-surface-overlay: var(--surface-overlay);
   --color-heading: var(--heading);
-  --color-body: var(--body);
-  --color-caption: var(--caption);
   --color-border-subtle: var(--border-subtle);
 
   --radius-sm: calc(var(--radius) * 0.6);
