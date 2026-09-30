@@ -6,9 +6,10 @@ async function fetchClients(): Promise<ClientResponse[]> {
   return apiFetch<ClientResponse[]>('/clients');
 }
 
-export function useClients() {
+export function useClients(enabled = true) {
   return useQuery({
     queryKey: ['clients'],
     queryFn: fetchClients,
+    enabled,
   });
 }
