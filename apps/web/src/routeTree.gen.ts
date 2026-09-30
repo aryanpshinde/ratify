@@ -11,10 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as AdminIndexRouteImport } from './routes/_admin/index'
 import { Route as AdminClientsRouteImport } from './routes/_admin/clients'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
+import { Route as InviteTokenRouteImport } from './routes/invite/$token'
+import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as AdminProjectsProjectIdRouteImport } from './routes/_admin/projects/$projectId'
 
 const AdminRoute = AdminRouteImport.update({
@@ -23,6 +26,11 @@ const AdminRoute = AdminRouteImport.update({
 } as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -45,6 +53,16 @@ const AuthSignupRoute = AuthSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => AuthRoute,
 } as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
 const AdminProjectsProjectIdRoute = AdminProjectsProjectIdRouteImport.update({
   id: '/projects/$projectId',
   path: '/projects/$projectId',
@@ -53,9 +71,12 @@ const AdminProjectsProjectIdRoute = AdminProjectsProjectIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AdminIndexRoute
+  '/portal': typeof PortalRouteWithChildren
   '/clients': typeof AdminClientsRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/portal/': typeof PortalIndexRoute
   '/projects/$projectId': typeof AdminProjectsProjectIdRoute
 }
 export interface FileRoutesByTo {
@@ -63,37 +84,62 @@ export interface FileRoutesByTo {
   '/clients': typeof AdminClientsRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/portal': typeof PortalIndexRoute
   '/projects/$projectId': typeof AdminProjectsProjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_admin': typeof AdminRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
+  '/portal': typeof PortalRouteWithChildren
   '/_admin/clients': typeof AdminClientsRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/_admin/': typeof AdminIndexRoute
+  '/portal/': typeof PortalIndexRoute
   '/_admin/projects/$projectId': typeof AdminProjectsProjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clients' | '/login' | '/signup' | '/projects/$projectId'
+  fullPaths:
+    | '/'
+    | '/portal'
+    | '/clients'
+    | '/login'
+    | '/signup'
+    | '/invite/$token'
+    | '/portal/'
+    | '/projects/$projectId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clients' | '/login' | '/signup' | '/projects/$projectId'
+  to:
+    | '/'
+    | '/clients'
+    | '/login'
+    | '/signup'
+    | '/invite/$token'
+    | '/portal'
+    | '/projects/$projectId'
   id:
     | '__root__'
     | '/_admin'
     | '/_auth'
+    | '/portal'
     | '/_admin/clients'
     | '/_auth/login'
     | '/_auth/signup'
+    | '/invite/$token'
     | '/_admin/'
+    | '/portal/'
     | '/_admin/projects/$projectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  PortalRoute: typeof PortalRouteWithChildren
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -110,6 +156,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin/': {
@@ -139,6 +192,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/signup'
       preLoaderRoute: typeof AuthSignupRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
     }
     '/_admin/projects/$projectId': {
       id: '/_admin/projects/$projectId'
@@ -176,9 +243,22 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface PortalRouteChildren {
+  PortalIndexRoute: typeof PortalIndexRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalIndexRoute: PortalIndexRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  PortalRoute: PortalRouteWithChildren,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

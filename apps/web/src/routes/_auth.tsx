@@ -1,14 +1,28 @@
 import { Navigate, Outlet, createFileRoute } from '@tanstack/react-router';
 import { useSession } from '@/lib/auth-client';
+import { usePortalProjects } from '@/hooks/portal/use-portal-projects';
+
+function safeRedirect(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  if (!value.startsWith('/') || value.startsWith('//')) return undefined;
+  return value;
+}
 
 export const Route = createFileRoute('/_auth')({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const redirect = safeRedirect(search.redirect);
+    return redirect ? { redirect } : {};
+  },
   component: AuthLayout,
 });
 
 function AuthLayout() {
+  const { redirect } = Route.useSearch();
   const { data: session, isPending } = useSession();
+  const { data: portalProjects, isPending: portalPending, isError: portalError } =
+    usePortalProjects(!!session);
 
-  if (isPending) {
+  if (isPending || (session && portalPending)) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-body text-muted-foreground">Loading...</p>
@@ -17,7 +31,14 @@ function AuthLayout() {
   }
 
   if (session) {
-    return <Navigate to="/" />;
+    if (redirect) {
+      return <Navigate to={redirect} />;
+    }
+    if (portalError) {
+      return <Navigate to="/portal" />;
+    }
+    const hasPortalAccess = !!portalProjects && portalProjects.length > 0;
+    return <Navigate to={hasPortalAccess ? '/portal' : '/'} />;
   }
 
   return (
