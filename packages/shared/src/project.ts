@@ -58,9 +58,20 @@ export const projectListItemSchema = projectResponseSchema.extend({
   clientEmail: z.email(),
 });
 
+export const portalProjectListItemSchema = projectResponseSchema
+  .omit({
+    ownerId: true,
+    clientId: true,
+  })
+  .extend({
+    clientName: z.string(),
+    clientCompany: z.string().nullable(),
+  });
+
 export type ProjectStatus = z.infer<typeof projectStatusSchema>;
 export type MemberRole = z.infer<typeof memberRoleSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type ProjectResponse = z.infer<typeof projectResponseSchema>;
 export type ProjectListItem = z.infer<typeof projectListItemSchema>;
+export type PortalProjectListItem = z.infer<typeof portalProjectListItemSchema>;

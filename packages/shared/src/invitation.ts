@@ -17,5 +17,13 @@ export const invitationResponseSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 
+export const invitationPreviewSchema = z.object({
+  email: z.email(),
+  expiresAt: z.iso.datetime(),
+  projectId: z.uuid(),
+  projectTitle: z.string(),
+});
+
 export type CreateInvitationInput = z.infer<typeof createInvitationSchema>;
 export type InvitationResponse = z.infer<typeof invitationResponseSchema>;
+export type InvitationPreview = z.infer<typeof invitationPreviewSchema>;
