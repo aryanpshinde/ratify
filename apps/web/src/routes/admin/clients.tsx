@@ -10,7 +10,7 @@ import { DeleteClientDialog } from '@/components/clients/delete-client-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
-export const Route = createFileRoute('/_admin/clients')({
+export const Route = createFileRoute('/admin/clients')({
   component: ClientsPage,
 });
 

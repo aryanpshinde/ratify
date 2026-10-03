@@ -291,7 +291,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                 type="button"
                 onClick={() => {
                   handleOpenChange(false);
-                  navigate({ to: '/clients' });
+                  navigate({ to: '/admin/clients' });
                 }}
               >
                 Add a Client

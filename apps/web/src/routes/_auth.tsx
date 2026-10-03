@@ -1,5 +1,6 @@
 import { Navigate, Outlet, createFileRoute } from '@tanstack/react-router';
 import { useSession } from '@/lib/auth-client';
+import { useClients } from '@/hooks/clients/use-clients';
 import { usePortalProjects } from '@/hooks/portal/use-portal-projects';
 
 function safeRedirect(value: unknown): string | undefined {
@@ -19,10 +20,11 @@ export const Route = createFileRoute('/_auth')({
 function AuthLayout() {
   const { redirect } = Route.useSearch();
   const { data: session, isPending } = useSession();
+  const { data: clients, isPending: clientsPending } = useClients(!!session);
   const { data: portalProjects, isPending: portalPending, isError: portalError } =
     usePortalProjects(!!session);
 
-  if (isPending || (session && portalPending)) {
+  if (isPending || (session && (portalPending || clientsPending))) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-body text-muted-foreground">Loading...</p>
@@ -35,10 +37,10 @@ function AuthLayout() {
       return <Navigate to={redirect} />;
     }
     if (portalError) {
-      return <Navigate to="/portal" />;
+      return <Navigate to={!clients?.length ? '/portal' : '/admin'} />;
     }
-    const hasPortalAccess = !!portalProjects && portalProjects.length > 0;
-    return <Navigate to={hasPortalAccess ? '/portal' : '/'} />;
+    const isPortalOnly = !clients?.length && !!portalProjects?.length;
+    return <Navigate to={isPortalOnly ? '/portal' : '/admin'} />;
   }
 
   return (

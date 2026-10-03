@@ -25,7 +25,7 @@ import {
 import { useSession } from '@/lib/auth-client';
 import { JUST_SIGNED_UP_KEY, PROJECT_STATUS_GROUPS } from '@/lib/constants';
 
-export const Route = createFileRoute('/_admin/')({
+export const Route = createFileRoute('/admin/')({
   component: DashboardHome,
 });
 
@@ -82,7 +82,7 @@ function DashboardHome() {
 
   const handleGetStarted = () => {
     setWelcomeOpen(false);
-    navigate({ to: '/clients' });
+    navigate({ to: '/admin/clients' });
   };
 
   return (

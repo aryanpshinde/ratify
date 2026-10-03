@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { useClients } from '@/hooks/clients/use-clients';
 import { usePortalProjects } from '@/hooks/portal/use-portal-projects';
 
-export const Route = createFileRoute('/_admin')({
+export const Route = createFileRoute('/admin')({
   component: AdminLayout,
 });
 
@@ -13,7 +13,7 @@ function AdminLayout() {
   const { data: clients, isPending: clientsPending } = useClients(!!session);
   const { data: portalProjects, isPending: portalPending } = usePortalProjects(!!session);
 
-  if (isPending || clientsPending || portalPending) {
+  if (isPending || (session && (clientsPending || portalPending))) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-body text-muted-foreground">Loading...</p>

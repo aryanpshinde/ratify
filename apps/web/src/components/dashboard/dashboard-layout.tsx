@@ -40,14 +40,14 @@ export function DashboardLayout({ session, children }: DashboardLayoutProps) {
             <h1 className="text-h2 text-foreground">Ratify</h1>
             <nav className="flex items-center gap-1">
               <Link
-                to="/"
+                to="/admin"
                 className={navLinkClasses}
                 activeProps={{ className: 'bg-muted text-foreground' }}
               >
                 Dashboard
               </Link>
               <Link
-                to="/clients"
+                to="/admin/clients"
                 className={navLinkClasses}
                 activeProps={{ className: 'bg-muted text-foreground' }}
               >

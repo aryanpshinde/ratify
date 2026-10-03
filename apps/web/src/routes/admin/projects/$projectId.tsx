@@ -13,7 +13,7 @@ import { useInvitations } from '@/hooks/projects/use-invitations';
 import { InviteClientDialog } from '@/components/projects/invite-client-dialog';
 import { PendingInvitationsList } from '@/components/projects/pending-invitations-list';
 
-export const Route = createFileRoute('/_admin/projects/$projectId')({
+export const Route = createFileRoute('/admin/projects/$projectId')({
   component: ProjectDetailPage,
 });
 
@@ -51,7 +51,7 @@ function ProjectDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24">
         <p className="text-body text-muted-foreground">Project not found.</p>
-        <Link to="/">
+        <Link to="/admin">
           <Button variant="outline" className="mt-4">
             Back to Dashboard
           </Button>
@@ -63,7 +63,7 @@ function ProjectDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/">
+        <Link to="/admin">
           <Tooltip>
             <TooltipTrigger
               render={

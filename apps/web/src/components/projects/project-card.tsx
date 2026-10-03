@@ -28,7 +28,7 @@ export function ProjectCard({ project, onToggleArchive, onDelete }: ProjectCardP
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-h3">
             <Link
-              to="/projects/$projectId"
+              to="/admin/projects/$projectId"
               params={{ projectId: project.id }}
               className="transition-colors hover:text-accent"
             >
