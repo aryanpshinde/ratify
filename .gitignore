@@ -9,3 +9,7 @@ logs/
 *.log
 *.log.*
 .DS_Store
+
+# Vitest reports and artifacts 
+.vitest/
+coverage/

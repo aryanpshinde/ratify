@@ -8,11 +8,14 @@
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm --filter @ratify/shared build && pnpm -r run typecheck",
     "clean": "pnpm -r exec rm -rf dist node_modules/.tmp",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "vitest run --project shared --project api",
+    "test:watch": "vitest --project shared --project api"
   },
   "license": "MIT",
   "type": "module",
   "devDependencies": {
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "vitest": "^5.0.3"
   }
 }
