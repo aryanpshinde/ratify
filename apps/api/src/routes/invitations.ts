@@ -5,6 +5,7 @@ import { projects, clients, invitations } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
+import { emailsMatch, findActiveInvite, isInviteExpired } from '../lib/invitation-guards.js';
 import { createInvitationSchema } from '@ratify/shared';
 import { desc, eq, and, sql } from 'drizzle-orm';
 
@@ -86,7 +87,7 @@ invitationRoutes.post('/:projectId/invitations', async (c) => {
     return c.json({ status: 'error', message: 'Client not found' }, 404);
   }
 
-  if (client.email.toLowerCase() !== parsed.data.email.toLowerCase()) {
+  if (!emailsMatch(client.email, parsed.data.email)) {
     return c.json(
       { status: 'error', message: 'Invitation email must match the project client email' },
       400,
@@ -109,9 +110,7 @@ invitationRoutes.post('/:projectId/invitations', async (c) => {
     )
     .orderBy(desc(invitations.createdAt));
 
-  const activeInvite = existingInvites.find(
-    (inv) => inv.acceptedAt === null && inv.revokedAt === null && inv.expiresAt > new Date(),
-  );
+  const activeInvite = findActiveInvite(existingInvites);
 
   if (activeInvite) {
     return c.json(
@@ -126,7 +125,7 @@ invitationRoutes.post('/:projectId/invitations', async (c) => {
   try {
     const created = await db.transaction(async (tx) => {
       for (const inv of existingInvites) {
-        if (inv.acceptedAt === null && inv.revokedAt === null && inv.expiresAt <= new Date()) {
+        if (inv.acceptedAt === null && inv.revokedAt === null && isInviteExpired(inv.expiresAt)) {
           await tx
             .update(invitations)
             .set({ revokedAt: new Date() })

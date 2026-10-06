@@ -3,6 +3,7 @@ import { db } from '../db/index.js';
 import { getSession } from '../lib/session.js';
 import { and, eq } from 'drizzle-orm';
 import { projects, clients, projectMembers, invitations } from '../db/schema.js';
+import { emailsMatch, isInviteExpired, isTokenShapeValid } from '../lib/invitation-guards.js';
 
 const invitationTokenRoutes = new Hono();
 
@@ -10,7 +11,7 @@ invitationTokenRoutes.get('/:token', async (c) => {
   const { token } = c.req.param();
 
   const raw = token?.trim() ?? '';
-  if (!raw || raw.length < 64 || raw.length > 255) {
+  if (!isTokenShapeValid(raw)) {
     return c.json({ status: 'error', message: 'Invalid invitation' }, 400);
   }
 
@@ -25,7 +26,7 @@ invitationTokenRoutes.get('/:token', async (c) => {
   if (invite.revokedAt !== null) {
     return c.json({ status: 'error', message: 'Invitation revoked' }, 410);
   }
-  if (invite.expiresAt <= new Date()) {
+  if (isInviteExpired(invite.expiresAt)) {
     return c.json({ status: 'error', message: 'Invitation expired' }, 410);
   }
 
@@ -59,7 +60,7 @@ invitationTokenRoutes.post('/:token/accept', async (c) => {
   const { token } = c.req.param();
 
   const raw = token?.trim() ?? '';
-  if (!raw || raw.length < 64 || raw.length > 255) {
+  if (!isTokenShapeValid(raw)) {
     return c.json({ status: 'error', message: 'Invalid invitation' }, 400);
   }
 
@@ -74,11 +75,11 @@ invitationTokenRoutes.post('/:token/accept', async (c) => {
   if (invite.revokedAt !== null) {
     return c.json({ status: 'error', message: 'Invitation revoked' }, 410);
   }
-  if (invite.expiresAt <= new Date()) {
+  if (isInviteExpired(invite.expiresAt)) {
     return c.json({ status: 'error', message: 'Invitation expired' }, 410);
   }
 
-  if (session.user.email.toLowerCase() !== invite.email.toLowerCase()) {
+  if (!emailsMatch(session.user.email, invite.email)) {
     return c.json(
       { status: 'error', message: 'Invitation email does not match your account' },
       403,
