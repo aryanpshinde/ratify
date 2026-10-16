@@ -1,0 +1,300 @@
+import { Hono } from 'hono';
+import { db } from '../db/index.js';
+import { deliverables, deliverableVersions } from '../db/schema.js';
+import { getSession } from '../lib/session.js';
+import { requireProjectAccess } from '../lib/access.js';
+import { getUuidParam } from '../lib/params.js';
+import { logActivity } from '../lib/activity.js';
+import { isDeliverableLocked } from '../lib/deliverable-guards.js';
+import { createLinkVersionSchema, updateDeliverableSchema } from '@ratify/shared';
+import { desc, eq, sql } from 'drizzle-orm';
+
+const deliverableRoutes = new Hono();
+
+const deliverableColumns = {
+  id: deliverables.id,
+  projectId: deliverables.projectId,
+  createdBy: deliverables.createdBy,
+  title: deliverables.title,
+  description: deliverables.description,
+  status: deliverables.status,
+  createdAt: deliverables.createdAt,
+  updatedAt: deliverables.updatedAt,
+};
+
+const versionColumns = {
+  id: deliverableVersions.id,
+  deliverableId: deliverableVersions.deliverableId,
+  versionNumber: deliverableVersions.versionNumber,
+  externalUrl: deliverableVersions.externalUrl,
+  fileName: deliverableVersions.fileName,
+  fileSize: deliverableVersions.fileSize,
+  mimeType: deliverableVersions.mimeType,
+  uploadedBy: deliverableVersions.uploadedBy,
+  createdAt: deliverableVersions.createdAt,
+};
+
+async function getDeliverableAccess(deliverableId: string, userId: string) {
+  const [deliverable] = await db
+    .select({ ...deliverableColumns })
+    .from(deliverables)
+    .where(eq(deliverables.id, deliverableId))
+    .limit(1);
+
+  if (!deliverable) {
+    return null;
+  }
+
+  const access = await requireProjectAccess(db, deliverable.projectId, userId);
+  if (!access) {
+    return null;
+  }
+
+  if (!access.isOwner && access.role !== 'admin') {
+    return { deliverable, forbidden: true as const };
+  }
+
+  return { deliverable, forbidden: false as const };
+}
+
+deliverableRoutes.get('/:id', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const result = await getDeliverableAccess(id, session.user.id);
+  if (!result) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if (result.forbidden) {
+    return c.json({ status: 'error', message: 'Forbidden' }, 403);
+  }
+
+  const versions = await db
+    .select({ ...versionColumns })
+    .from(deliverableVersions)
+    .where(eq(deliverableVersions.deliverableId, id))
+    .orderBy(desc(deliverableVersions.versionNumber));
+
+  return c.json({ status: 'ok', data: { ...result.deliverable, versions } });
+});
+
+deliverableRoutes.get('/:id/versions', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const result = await getDeliverableAccess(id, session.user.id);
+  if (!result) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if (result.forbidden) {
+    return c.json({ status: 'error', message: 'Forbidden' }, 403);
+  }
+
+  const rows = await db
+    .select({ ...versionColumns })
+    .from(deliverableVersions)
+    .where(eq(deliverableVersions.deliverableId, id))
+    .orderBy(desc(deliverableVersions.versionNumber));
+
+  return c.json({ status: 'ok', data: rows });
+});
+
+deliverableRoutes.patch('/:id', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ status: 'error', message: 'Invalid JSON body' }, 400);
+  }
+
+  const parsed = updateDeliverableSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ status: 'error', message: 'Validation Failed', error: parsed.error.issues }, 400);
+  }
+
+  const result = await getDeliverableAccess(id, session.user.id);
+  if (!result) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if (result.forbidden) {
+    return c.json({ status: 'error', message: 'Forbidden' }, 403);
+  }
+
+  if (isDeliverableLocked(result.deliverable.status)) {
+    return c.json({ status: 'error', message: 'Approved deliverables cannot be edited' }, 403);
+  }
+
+  const data = parsed.data;
+
+  const payload: Record<string, unknown> = {};
+
+  if (data.title !== undefined) payload['title'] = data.title;
+  if (data.description !== undefined)
+    payload['description'] = data.description === '' ? null : data.description;
+
+  const updated = await db
+    .update(deliverables)
+    .set(payload)
+    .where(eq(deliverables.id, id))
+    .returning();
+
+  const [row] = updated;
+
+  if (!row) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  return c.json({ status: 'ok', data: row });
+});
+
+deliverableRoutes.delete('/:id', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const result = await getDeliverableAccess(id, session.user.id);
+  if (!result) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if (result.forbidden) {
+    return c.json({ status: 'error', message: 'Forbidden' }, 403);
+  }
+
+  if (isDeliverableLocked(result.deliverable.status)) {
+    return c.json({ status: 'error', message: 'Approved deliverables cannot be deleted' }, 403);
+  }
+
+  await db.delete(deliverables).where(eq(deliverables.id, id));
+
+  return c.json({ status: 'ok', data: id });
+});
+
+deliverableRoutes.post('/:id/versions/link', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ status: 'error', message: 'Invalid JSON body' }, 400);
+  }
+
+  const parsed = createLinkVersionSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ status: 'error', message: 'Validation Failed', error: parsed.error.issues }, 400);
+  }
+
+  const result = await getDeliverableAccess(id, session.user.id);
+  if (!result) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if (result.forbidden) {
+    return c.json({ status: 'error', message: 'Forbidden' }, 403);
+  }
+
+  const created = await db.transaction(async (tx) => {
+    const [locked] = await tx
+      .select({ id: deliverables.id, status: deliverables.status })
+      .from(deliverables)
+      .where(eq(deliverables.id, id))
+      .limit(1)
+      .for('update');
+
+    if (!locked) {
+      return null;
+    }
+
+    if (isDeliverableLocked(locked.status)) {
+      return { locked: true as const };
+    }
+
+    const [maxRow] = await tx
+      .select({ maxVersion: sql<number | null>`max(${deliverableVersions.versionNumber})` })
+      .from(deliverableVersions)
+      .where(eq(deliverableVersions.deliverableId, id));
+
+    const [row] = await tx
+      .insert(deliverableVersions)
+      .values({
+        deliverableId: id,
+        versionNumber: (maxRow?.maxVersion ?? 0) + 1,
+        externalUrl: parsed.data.externalUrl,
+        uploadedBy: session.user.id,
+      })
+      .returning();
+
+    if (row) {
+      await logActivity(
+        {
+          projectId: result.deliverable.projectId,
+          actorId: session.user.id,
+          action: 'version_uploaded',
+          targetType: 'deliverable_version',
+          targetId: row.id,
+          metadata: { version_number: row.versionNumber },
+        },
+        tx,
+      );
+    }
+
+    return row;
+  });
+
+  if (!created) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if ('locked' in created && created.locked) {
+    return c.json(
+      { status: 'error', message: 'Approved deliverables cannot receive new versions' },
+      403,
+    );
+  }
+
+  return c.json({ status: 'ok', data: created }, 201);
+});
+
+export default deliverableRoutes;

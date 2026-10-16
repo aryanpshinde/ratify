@@ -10,6 +10,8 @@ import clientRoutes from './routes/clients.js';
 import projectRoutes from './routes/projects.js';
 import invitationRoutes from './routes/invitations.js';
 import invitationTokenRoutes from './routes/invitation-tokens.js';
+import projectDeliverableRoutes from './routes/project-deliverables.js';
+import deliverableRoutes from './routes/deliverables.js';
 import portalRoutes from './routes/portal.js';
 
 const app = new Hono();
@@ -21,7 +23,9 @@ app.all('/api/auth/*', (c) => auth.handler(c.req.raw));
 app.route('/api/clients', clientRoutes);
 app.route('/api/projects', projectRoutes);
 app.route('/api/projects', invitationRoutes);
+app.route('/api/projects', projectDeliverableRoutes);
 app.route('/api/invitations', invitationTokenRoutes);
+app.route('/api/deliverables', deliverableRoutes);
 app.route('/api/portal', portalRoutes);
 
 app.get('/api/health', (c) => {
