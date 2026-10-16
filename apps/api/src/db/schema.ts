@@ -10,6 +10,7 @@ import {
   varchar,
   pgEnum,
   date,
+  integer,
   jsonb,
   check,
 } from 'drizzle-orm/pg-core';
@@ -21,6 +22,12 @@ export const projectStatusEnum = pgEnum('project_status', [
   'archived',
 ]);
 export const projectMemberRoleEnum = pgEnum('member_role', ['admin', 'client']);
+export const deliverableStatusEnum = pgEnum('deliverable_status', [
+  'draft',
+  'submitted',
+  'approved',
+  'rejected',
+]);
 
 export const users = pgTable('users', {
   id: uuid('id')
@@ -237,6 +244,82 @@ export const invitations = pgTable(
   ],
 );
 
+export const deliverables = pgTable(
+  'deliverables',
+  {
+    id: uuid('id')
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
+    status: deliverableStatusEnum('status').notNull().default('draft'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('deliverables_projectId_idx').on(table.projectId),
+    index('deliverables_status_idx').on(table.status),
+  ],
+);
+
+export const deliverableVersions = pgTable(
+  'deliverable_versions',
+  {
+    id: uuid('id')
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    deliverableId: uuid('deliverable_id')
+      .notNull()
+      .references(() => deliverables.id, { onDelete: 'cascade' }),
+    versionNumber: integer('version_number').notNull(),
+    externalUrl: varchar('external_url', { length: 2048 }),
+    fileKey: varchar('file_key', { length: 512 }),
+    fileName: varchar('file_name', { length: 512 }),
+    fileSize: integer('file_size'),
+    mimeType: varchar('mime_type', { length: 255 }),
+    uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('deliverable_versions_deliverableId_versionNumber_uidx').on(
+      table.deliverableId,
+      table.versionNumber,
+    ),
+    index('deliverable_versions_deliverableId_idx').on(table.deliverableId),
+    check(
+      'deliverable_versions_one_snapshot_chk',
+      sql`(${table.externalUrl} IS NULL) <> (${table.fileKey} IS NULL)`,
+    ),
+    check(
+      'deliverable_versions_file_snapshot_complete_chk',
+      sql`(${table.fileKey} IS NULL) = (${table.fileName} IS NULL) AND (${table.fileKey} IS NULL) = (${table.fileSize} IS NULL) AND (${table.fileKey} IS NULL) = (${table.mimeType} IS NULL)`,
+    ),
+    check(
+      'deliverable_versions_file_size_chk',
+      sql`${table.fileSize} IS NULL OR ${table.fileSize} <= 10485760`,
+    ),
+    check(
+      'deliverable_versions_external_url_chk',
+      sql`${table.externalUrl} IS NULL OR ${table.externalUrl} <> ''`,
+    ),
+    check(
+      'deliverable_versions_file_key_chk',
+      sql`${table.fileKey} IS NULL OR ${table.fileKey} <> ''`,
+    ),
+    check(
+      'deliverable_versions_file_name_chk',
+      sql`${table.fileName} IS NULL OR (${table.fileName} <> '' AND trim(${table.fileName}) <> '')`,
+    ),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
@@ -246,6 +329,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   projectMemberships: many(projectMembers),
   activityLogs: many(activityLogs),
   sentInvitations: many(invitations),
+  createdDeliverables: many(deliverables),
+  uploadedVersions: many(deliverableVersions),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -288,6 +373,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   members: many(projectMembers),
   activityLogs: many(activityLogs),
   invitations: many(invitations),
+  deliverables: many(deliverables),
 }));
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
@@ -319,6 +405,29 @@ export const invitationsRelations = relations(invitations, ({ one }) => ({
   }),
   invitedBy: one(users, {
     fields: [invitations.invitedBy],
+    references: [users.id],
+  }),
+}));
+
+export const deliverablesRelations = relations(deliverables, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [deliverables.projectId],
+    references: [projects.id],
+  }),
+  createdByUser: one(users, {
+    fields: [deliverables.createdBy],
+    references: [users.id],
+  }),
+  versions: many(deliverableVersions),
+}));
+
+export const deliverableVersionsRelations = relations(deliverableVersions, ({ one }) => ({
+  deliverable: one(deliverables, {
+    fields: [deliverableVersions.deliverableId],
+    references: [deliverables.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [deliverableVersions.uploadedBy],
     references: [users.id],
   }),
 }));

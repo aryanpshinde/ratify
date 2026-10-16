@@ -36,6 +36,13 @@
       "when": 1789983541845,
       "tag": "0004_ancient_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792173272617,
+      "tag": "0005_thin_diamondback",
+      "breakpoints": true
     }
   ]
 }
