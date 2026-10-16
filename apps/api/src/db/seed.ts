@@ -2,16 +2,24 @@
  * Demo seed — realistic freelancer workspace for portfolio/demo.
  *
  * Targets an EXISTING auth user (default: aryan@aryan.com) and inserts
- * clients, projects, one pending invitation, and activity history.
- * Deliverables/feedback tables don't exist yet (slices 4-6), so those
- * are intentionally out of scope.
+ * clients, projects, one pending invitation, deliverables with external-link
+ * version history, and activity history. Client feedback (slices 5-6) is
+ * intentionally out of scope.
  *
  * Run: pnpm db:seed [owner@email.com]
  */
 import { randomBytes } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from './index.js';
-import { activityLogs, clients, invitations, projects, users } from './schema.js';
+import {
+  activityLogs,
+  clients,
+  deliverables,
+  deliverableVersions,
+  invitations,
+  projects,
+  users,
+} from './schema.js';
 
 const OWNER_EMAIL = process.argv[2] ?? 'aryan@aryan.com';
 const JUNK_TITLES = ['df', 'fg'];
@@ -105,6 +113,137 @@ const SEED_PROJECTS: SeedProject[] = [
     budgetDisplay: null,
     createdAgoMs: 120 * DAY,
     updatedAgoMs: 90 * DAY,
+  },
+];
+
+interface SeedVersion {
+  externalUrl: string;
+  createdAgoMs: number;
+}
+
+interface SeedDeliverable {
+  title: string;
+  description: string | null;
+  status: 'draft' | 'submitted' | 'approved' | 'rejected';
+  createdAgoMs: number;
+  updatedAgoMs: number;
+  versions: SeedVersion[];
+}
+
+interface SeedProjectDeliverables {
+  projectTitle: string;
+  deliverables: SeedDeliverable[];
+}
+
+const SEED_DELIVERABLES: SeedProjectDeliverables[] = [
+  {
+    projectTitle: 'Acme website redesign',
+    deliverables: [
+      {
+        title: 'Homepage hero design',
+        description: 'Hero concepts across breakpoints with the agreed art direction notes.',
+        status: 'draft',
+        createdAgoMs: 8 * DAY,
+        updatedAgoMs: 3 * HOUR,
+        versions: [
+          { externalUrl: 'https://www.figma.com/design/acme-homepage/hero-v1', createdAgoMs: 8 * DAY },
+          {
+            externalUrl: 'https://www.figma.com/design/acme-homepage/hero-v2',
+            createdAgoMs: 5 * DAY,
+          },
+          {
+            externalUrl: 'https://www.loom.com/share/acme-hero-walkthrough',
+            createdAgoMs: 3 * HOUR,
+          },
+        ],
+      },
+      {
+        title: 'Visual identity handoff',
+        description: 'Final color, type and logo usage specs for the dev team.',
+        status: 'approved',
+        createdAgoMs: 7 * DAY,
+        updatedAgoMs: 2 * DAY,
+        versions: [
+          {
+            externalUrl: 'https://www.figma.com/design/acme-brand/spec-v1',
+            createdAgoMs: 6 * DAY + 12 * HOUR,
+          },
+          {
+            externalUrl: 'https://www.figma.com/design/acme-brand/spec-v2',
+            createdAgoMs: 4 * DAY,
+          },
+        ],
+      },
+      {
+        title: 'Pricing page templates',
+        description: 'Pricing section variants waiting on a first layout pass.',
+        status: 'draft',
+        createdAgoMs: 2 * DAY,
+        updatedAgoMs: 2 * DAY,
+        versions: [],
+      },
+    ],
+  },
+  {
+    projectTitle: 'Lumen Labs brand identity',
+    deliverables: [
+      {
+        title: 'Logo suite exploration',
+        description: 'Primary mark, wordmark variants and monochrome lockups.',
+        status: 'submitted',
+        createdAgoMs: 12 * DAY,
+        updatedAgoMs: 1 * DAY + 12 * HOUR,
+        versions: [
+          {
+            externalUrl: 'https://www.figma.com/design/lumen-logos/suite-v1',
+            createdAgoMs: 12 * DAY,
+          },
+          {
+            externalUrl: 'https://www.figma.com/design/lumen-logos/suite-v2',
+            createdAgoMs: 1 * DAY + 12 * HOUR,
+          },
+        ],
+      },
+      {
+        title: 'Type pairing study',
+        description: 'Display and body pairings — client asked for a warmer serif direction.',
+        status: 'rejected',
+        createdAgoMs: 10 * DAY,
+        updatedAgoMs: 2 * DAY,
+        versions: [
+          {
+            externalUrl: 'https://www.figma.com/design/lumen-type/pairing-v1',
+            createdAgoMs: 10 * DAY,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    projectTitle: 'Weber & Co. annual report',
+    deliverables: [
+      {
+        title: 'Report layout draft',
+        description: 'Print-ready master spreads plus the data-visualization system.',
+        status: 'approved',
+        createdAgoMs: 55 * DAY,
+        updatedAgoMs: 27 * DAY,
+        versions: [
+          {
+            externalUrl: 'https://www.figma.com/design/weber-report/layout-v1',
+            createdAgoMs: 55 * DAY,
+          },
+          {
+            externalUrl: 'https://www.figma.com/design/weber-report/layout-v2',
+            createdAgoMs: 40 * DAY,
+          },
+          {
+            externalUrl: 'https://www.figma.com/design/weber-report/layout-v3',
+            createdAgoMs: 28 * DAY,
+          },
+        ],
+      },
+    ],
   },
 ];
 
@@ -239,6 +378,78 @@ async function main() {
     } else {
       console.log('Invitation: active invite already exists, skipped.');
     }
+  }
+
+  // 5. Deliverables and link versions (by title; skip projects that already have deliverables).
+  for (const group of SEED_DELIVERABLES) {
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.ownerId, owner.id), eq(projects.title, group.projectTitle)))
+      .limit(1);
+    if (!project) {
+      console.warn(`  ! project "${group.projectTitle}" missing, skipping deliverables`);
+      continue;
+    }
+
+    const existingRows = await db
+      .select({ id: deliverables.id })
+      .from(deliverables)
+      .where(eq(deliverables.projectId, project.id));
+    if (existingRows.length > 0) {
+      console.log(`Deliverables: "${group.projectTitle}" already has deliverables, skipped.`);
+      continue;
+    }
+
+    for (const d of group.deliverables) {
+      const [deliverable] = await db
+        .insert(deliverables)
+        .values({
+          projectId: project.id,
+          createdBy: owner.id,
+          title: d.title,
+          description: d.description,
+          status: d.status,
+          createdAt: ago(d.createdAgoMs),
+          updatedAt: ago(d.updatedAgoMs),
+        })
+        .returning();
+      if (!deliverable) continue;
+
+      await db.insert(activityLogs).values({
+        projectId: project.id,
+        actorId: owner.id,
+        action: 'deliverable_created',
+        targetType: 'deliverable',
+        targetId: deliverable.id,
+        createdAt: ago(d.createdAgoMs),
+      });
+
+      for (const [index, v] of d.versions.entries()) {
+        const [version] = await db
+          .insert(deliverableVersions)
+          .values({
+            deliverableId: deliverable.id,
+            versionNumber: index + 1,
+            externalUrl: v.externalUrl,
+            uploadedBy: owner.id,
+            createdAt: ago(v.createdAgoMs),
+          })
+          .returning();
+        if (!version) continue;
+
+        await db.insert(activityLogs).values({
+          projectId: project.id,
+          actorId: owner.id,
+          action: 'version_uploaded',
+          targetType: 'deliverable_version',
+          targetId: version.id,
+          metadata: { version_number: index + 1 },
+          createdAt: ago(v.createdAgoMs),
+        });
+      }
+    }
+    console.log(`Deliverables: +${group.deliverables.length} on "${group.projectTitle}".`);
   }
 
   console.log('Seed complete.');
