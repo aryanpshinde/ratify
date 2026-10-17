@@ -9,6 +9,7 @@
     "typecheck": "pnpm --filter @ratify/shared build && pnpm -r run typecheck",
     "clean": "pnpm -r exec rm -rf dist node_modules/.tmp",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run --project shared --project api",
     "test:watch": "vitest --project shared --project api"
   },
