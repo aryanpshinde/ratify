@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { signOut } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,11 +19,13 @@ interface PortalShellProps {
 
 export function PortalShell({ session, children }: PortalShellProps) {
   const [loggingOut, setLoggingOut] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
       await signOut();
+      queryClient.clear();
     } finally {
       setLoggingOut(false);
     }

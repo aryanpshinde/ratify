@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { signOut } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
@@ -22,11 +23,13 @@ const navLinkClasses =
 
 export function DashboardLayout({ session, children }: DashboardLayoutProps) {
   const [loggingOut, setLoggingOut] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
       await signOut();
+      queryClient.clear();
     } finally {
       setLoggingOut(false);
     }
