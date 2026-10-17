@@ -18,12 +18,12 @@ describe('invite guards', () => {
     const fresh = new Date(Date.now() + 86400000);
     const stale = new Date(Date.now() - 1000);
     expect(isInviteActive({ acceptedAt: null, revokedAt: null, expiresAt: fresh })).toBe(true);
-    expect(
-      isInviteActive({ acceptedAt: new Date(), revokedAt: null, expiresAt: fresh }),
-    ).toBe(false);
-    expect(
-      isInviteActive({ acceptedAt: null, revokedAt: new Date(), expiresAt: fresh }),
-    ).toBe(false);
+    expect(isInviteActive({ acceptedAt: new Date(), revokedAt: null, expiresAt: fresh })).toBe(
+      false,
+    );
+    expect(isInviteActive({ acceptedAt: null, revokedAt: new Date(), expiresAt: fresh })).toBe(
+      false,
+    );
     expect(isInviteActive({ acceptedAt: null, revokedAt: null, expiresAt: stale })).toBe(false);
   });
 

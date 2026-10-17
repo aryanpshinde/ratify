@@ -24,14 +24,18 @@ export function useCreateDeliverable() {
   return useMutation({
     mutationFn: createDeliverable,
     onSuccess: (_result, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'deliverables'] });
+      queryClient.invalidateQueries({
+        queryKey: ['projects', variables.projectId, 'deliverables'],
+      });
       queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'activity'] });
       toast.success('Deliverable created');
     },
     onError: (error) => {
       if (error instanceof ApiError && (error.status === 400 || error.status === 404)) return;
       const message =
-        error instanceof ApiError ? error.message : 'Failed to create deliverable. Please try again';
+        error instanceof ApiError
+          ? error.message
+          : 'Failed to create deliverable. Please try again';
       toast.error('Failed to create deliverable', { description: message });
     },
   });

@@ -73,7 +73,9 @@ export function UpdateDeliverableDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-h2">Edit Deliverable</DialogTitle>
-          <DialogDescription>Update the title or description of this deliverable.</DialogDescription>
+          <DialogDescription>
+            Update the title or description of this deliverable.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">

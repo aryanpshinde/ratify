@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createInvitationSchema,
-  invitationResponseSchema,
-} from '../src/invitation.js';
+import { createInvitationSchema, invitationResponseSchema } from '../src/invitation.js';
 
 describe('createInvitationSchema', () => {
   it('accepts a valid email', () => {

@@ -21,8 +21,11 @@ function AuthLayout() {
   const { redirect } = Route.useSearch();
   const { data: session, isPending } = useSession();
   const { data: clients, isPending: clientsPending } = useClients(!!session);
-  const { data: portalProjects, isPending: portalPending, isError: portalError } =
-    usePortalProjects(!!session);
+  const {
+    data: portalProjects,
+    isPending: portalPending,
+    isError: portalError,
+  } = usePortalProjects(!!session);
 
   if (isPending || (session && (portalPending || clientsPending))) {
     return (

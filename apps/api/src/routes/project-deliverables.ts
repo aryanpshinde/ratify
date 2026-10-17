@@ -77,7 +77,10 @@ projectDeliverableRoutes.get('/:projectId/deliverables', async (c) => {
 
   const countByDeliverable = new Map<string, number>();
   for (const version of versions) {
-    countByDeliverable.set(version.deliverableId, (countByDeliverable.get(version.deliverableId) ?? 0) + 1);
+    countByDeliverable.set(
+      version.deliverableId,
+      (countByDeliverable.get(version.deliverableId) ?? 0) + 1,
+    );
   }
 
   const data = rows.map((row) => ({
@@ -109,7 +112,10 @@ projectDeliverableRoutes.post('/:projectId/deliverables', async (c) => {
 
   const parsed = createDeliverableSchema.safeParse(body);
   if (!parsed.success) {
-    return c.json({ status: 'error', message: 'Validation Failed', error: parsed.error.issues }, 400);
+    return c.json(
+      { status: 'error', message: 'Validation Failed', error: parsed.error.issues },
+      400,
+    );
   }
 
   const access = await requireProjectAccess(db, projectId, session.user.id);

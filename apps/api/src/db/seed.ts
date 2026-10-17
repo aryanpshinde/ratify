@@ -146,7 +146,10 @@ const SEED_DELIVERABLES: SeedProjectDeliverables[] = [
         createdAgoMs: 8 * DAY,
         updatedAgoMs: 3 * HOUR,
         versions: [
-          { externalUrl: 'https://www.figma.com/design/acme-homepage/hero-v1', createdAgoMs: 8 * DAY },
+          {
+            externalUrl: 'https://www.figma.com/design/acme-homepage/hero-v1',
+            createdAgoMs: 8 * DAY,
+          },
           {
             externalUrl: 'https://www.figma.com/design/acme-homepage/hero-v2',
             createdAgoMs: 5 * DAY,

@@ -28,12 +28,18 @@ export function useCreateFileVersion() {
     mutationFn: createFileVersion,
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['deliverables', variables.deliverableId] });
-      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'deliverables'] });
+      queryClient.invalidateQueries({
+        queryKey: ['projects', variables.projectId, 'deliverables'],
+      });
       queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'activity'] });
       toast.success('File version created');
     },
     onError: (error) => {
-      if (error instanceof ApiError && (error.status === 400 || error.status === 404 || error.status === 403)) return;
+      if (
+        error instanceof ApiError &&
+        (error.status === 400 || error.status === 404 || error.status === 403)
+      )
+        return;
       const message =
         error instanceof ApiError ? error.message : 'Failed to upload file. Please try again';
       toast.error('Failed to upload file', { description: message });

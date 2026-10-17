@@ -62,9 +62,7 @@ export function DeliverableVersionsList({
             </p>
             <div className="flex items-center gap-3 font-mono text-caption text-muted-foreground">
               <span className="tabular-nums">{formatDate(version.createdAt)}</span>
-              {version.externalUrl && (
-                <span className="truncate">{version.externalUrl}</span>
-              )}
+              {version.externalUrl && <span className="truncate">{version.externalUrl}</span>}
               {version.fileName && (
                 <span>
                   {version.fileName}

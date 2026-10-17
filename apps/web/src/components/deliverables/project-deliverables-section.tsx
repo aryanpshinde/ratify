@@ -81,7 +81,9 @@ export function ProjectDeliverablesSection({
                     {deliverable.latestVersion
                       ? `v${deliverable.latestVersion.versionNumber} · `
                       : ''}
-                    {deliverable.versionCount === 1 ? '1 version' : `${deliverable.versionCount} versions`}
+                    {deliverable.versionCount === 1
+                      ? '1 version'
+                      : `${deliverable.versionCount} versions`}
                     {' · '}
                     Updated {formatDate(deliverable.updatedAt)}
                   </p>

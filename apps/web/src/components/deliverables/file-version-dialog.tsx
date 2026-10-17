@@ -59,7 +59,11 @@ export function FileVersionDialog({
         },
         onError: (mutationError) => {
           if (mutationError instanceof ApiError) {
-            if (mutationError.status === 400 || mutationError.status === 403 || mutationError.status === 404) {
+            if (
+              mutationError.status === 400 ||
+              mutationError.status === 403 ||
+              mutationError.status === 404
+            ) {
               const issues = Array.isArray(mutationError.issues)
                 ? (mutationError.issues as Array<{ message?: string }>)
                 : [];
@@ -87,10 +91,9 @@ export function FileVersionDialog({
         <DialogHeader>
           <DialogTitle className="text-h2">Upload File Version</DialogTitle>
           <DialogDescription>
-            Upload a file to{' '}
-            <span className="font-medium text-foreground">{deliverableTitle}</span>. It becomes{' '}
-            <span className="font-mono tabular-nums">v{nextVersionNumber}</span>; previous versions
-            are preserved.
+            Upload a file to <span className="font-medium text-foreground">{deliverableTitle}</span>
+            . It becomes <span className="font-mono tabular-nums">v{nextVersionNumber}</span>;
+            previous versions are preserved.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
