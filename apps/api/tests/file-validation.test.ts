@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { isAllowedFileMimeType, MAX_FILE_SIZE_BYTES } from '@ratify/shared';
+import { isAllowedFileMimeType, MAX_FILE_NAME_LENGTH, MAX_FILE_SIZE_BYTES } from '@ratify/shared';
 import {
   getFileExtension,
+  isFileNameTooLong,
   isFileTooLarge,
   resolveFileMimeType,
   sanitizeFileName,
@@ -56,5 +57,11 @@ describe('file validation', () => {
     expect(isFileTooLarge(MAX_FILE_SIZE_BYTES)).toBe(false);
     expect(isFileTooLarge(MAX_FILE_SIZE_BYTES + 1)).toBe(true);
     expect(isFileTooLarge(0)).toBe(false);
+  });
+
+  it('enforces the file name length cap boundary', () => {
+    expect(isFileNameTooLong('a'.repeat(MAX_FILE_NAME_LENGTH - 1))).toBe(false);
+    expect(isFileNameTooLong('a'.repeat(MAX_FILE_NAME_LENGTH))).toBe(false);
+    expect(isFileNameTooLong('a'.repeat(MAX_FILE_NAME_LENGTH + 1))).toBe(true);
   });
 });

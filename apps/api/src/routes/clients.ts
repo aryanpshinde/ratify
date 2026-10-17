@@ -15,7 +15,16 @@ clientRoutes.get('/', async (c) => {
   }
 
   const rows = await db
-    .select()
+    .select({
+      id: clients.id,
+      ownerId: clients.ownerId,
+      userId: clients.userId,
+      name: clients.name,
+      email: clients.email,
+      company: clients.company,
+      createdAt: clients.createdAt,
+      updatedAt: clients.updatedAt,
+    })
     .from(clients)
     .where(eq(clients.ownerId, session.user.id))
     .orderBy(desc(clients.createdAt));
@@ -89,7 +98,16 @@ clientRoutes.get('/:id', async (c) => {
   }
 
   const [client] = await db
-    .select()
+    .select({
+      id: clients.id,
+      ownerId: clients.ownerId,
+      userId: clients.userId,
+      name: clients.name,
+      email: clients.email,
+      company: clients.company,
+      createdAt: clients.createdAt,
+      updatedAt: clients.updatedAt,
+    })
     .from(clients)
     .where(and(eq(clients.id, id), eq(clients.ownerId, session.user.id)))
     .limit(1);

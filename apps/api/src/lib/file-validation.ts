@@ -1,5 +1,6 @@
 import {
   isAllowedFileMimeType,
+  MAX_FILE_NAME_LENGTH,
   MAX_FILE_SIZE_BYTES,
   type AllowedFileMimeType,
 } from '@ratify/shared';
@@ -47,4 +48,8 @@ export function sanitizeFileName(fileName: string): string {
 
 export function isFileTooLarge(sizeBytes: number): boolean {
   return sizeBytes > MAX_FILE_SIZE_BYTES;
+}
+
+export function isFileNameTooLong(fileName: string): boolean {
+  return fileName.length > MAX_FILE_NAME_LENGTH;
 }
