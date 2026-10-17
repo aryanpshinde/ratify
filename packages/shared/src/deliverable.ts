@@ -25,6 +25,7 @@ export const createLinkVersionSchema = z.object({
 });
 
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+export const MAX_FILE_NAME_LENGTH = 200;
 
 export const allowedFileMimeTypes = [
   'image/png',
