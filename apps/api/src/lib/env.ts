@@ -14,6 +14,18 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(1, 'BETTER_AUTH_SECRET is required'),
   BETTER_AUTH_URL: z.string().optional(),
   FRONTEND_URL: z.url().default('http://localhost:5173'),
+  STORAGE_PROVIDER: z.enum(['neon']),
+  STORAGE_ENDPOINT: z
+    .url()
+    .refine((value) => value.startsWith('https://'), 'STORAGE_ENDPOINT must use https'),
+  STORAGE_BUCKET: z
+    .string()
+    .min(3)
+    .max(63)
+    .regex(/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/, 'STORAGE_BUCKET must be a valid bucket name'),
+  STORAGE_ACCESS_KEY: z.string().min(1, 'STORAGE_ACCESS_KEY is required'),
+  STORAGE_SECRET_KEY: z.string().min(1, 'STORAGE_SECRET_KEY is required'),
+  STORAGE_REGION: z.string().min(1, 'STORAGE_REGION is required'),
 });
 
 const parsed = envSchema.safeParse(process.env);

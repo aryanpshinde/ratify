@@ -5,9 +5,15 @@ import { getSession } from '../lib/session.js';
 import { requireProjectAccess } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
-import { isDeliverableLocked } from '../lib/deliverable-guards.js';
-import { createLinkVersionSchema, updateDeliverableSchema } from '@ratify/shared';
-import { desc, eq, sql } from 'drizzle-orm';
+import { isDeliverableLocked, canUploadVersion } from '../lib/deliverable-guards.js';
+import {
+  createLinkVersionSchema,
+  updateDeliverableSchema,
+  MAX_FILE_SIZE_BYTES,
+} from '@ratify/shared';
+import { sanitizeFileName, isFileTooLarge, resolveFileMimeType } from '../lib/file-validation.js';
+import { buildFileKey, deleteObject, uploadObject } from '../lib/storage.js';
+import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
 
 const deliverableRoutes = new Hono();
 
@@ -198,7 +204,16 @@ deliverableRoutes.delete('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Approved deliverables cannot be deleted' }, 403);
   }
 
+  const keyRows = await db
+    .select({ fileKey: deliverableVersions.fileKey })
+    .from(deliverableVersions)
+    .where(and(eq(deliverableVersions.deliverableId, id), isNotNull(deliverableVersions.fileKey)));
+
+  const fileKeys = keyRows.flatMap((row) => (row.fileKey ? [row.fileKey] : []));
+
   await db.delete(deliverables).where(eq(deliverables.id, id));
+
+  await Promise.allSettled(fileKeys.map((key) => deleteObject(key)));
 
   return c.json({ status: 'ok', data: id });
 });
@@ -288,6 +303,185 @@ deliverableRoutes.post('/:id/versions/link', async (c) => {
   }
 
   if ('locked' in created && created.locked) {
+    return c.json(
+      { status: 'error', message: 'Approved deliverables cannot receive new versions' },
+      403,
+    );
+  }
+
+  return c.json({ status: 'ok', data: created }, 201);
+});
+
+const fileRequiredIssue = { path: ['file'], code: 'invalid_type', message: 'File is required' };
+
+deliverableRoutes.post('/:id/versions/file', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  if (Number(c.req.header('content-length')) > MAX_FILE_SIZE_BYTES + 1048576) {
+    return c.json(
+      {
+        status: 'error',
+        message: 'Validation Failed',
+        error: [
+          { path: ['file'], code: 'custom', message: 'File exceeds the 10 MB limit' },
+        ],
+      },
+      400,
+    );
+  }
+
+  let form: Record<string, string | File | File[]>;
+  try {
+    form = await c.req.parseBody();
+  } catch {
+    return c.json({ status: 'error', message: 'Validation Failed', error: [fileRequiredIssue] }, 400);
+  }
+
+  const upload = form['file'];
+  if (!(upload instanceof File)) {
+    return c.json({ status: 'error', message: 'Validation Failed', error: [fileRequiredIssue] }, 400);
+  }
+
+  const fileName = sanitizeFileName(upload.name);
+  if (!fileName) {
+    return c.json(
+      {
+        status: 'error',
+        message: 'Validation Failed',
+        error: [{ path: ['file'], code: 'custom', message: 'Invalid file name' }],
+      },
+      400,
+    );
+  }
+
+  if (upload.size < 1) {
+    return c.json(
+      {
+        status: 'error',
+        message: 'Validation Failed',
+        error: [{ path: ['file'], code: 'custom', message: 'File is empty' }],
+      },
+      400,
+    );
+  }
+
+  if (isFileTooLarge(upload.size)) {
+    return c.json(
+      {
+        status: 'error',
+        message: 'Validation Failed',
+        error: [{ path: ['file'], code: 'custom', message: 'File exceeds the 10 MB limit' }],
+      },
+      400,
+    );
+  }
+
+  const mimeType = resolveFileMimeType(fileName, upload.type);
+  if (!mimeType) {
+    return c.json(
+      {
+        status: 'error',
+        message: 'Validation Failed',
+        error: [{ path: ['file'], code: 'custom', message: 'File type is not allowed' }],
+      },
+      400,
+    );
+  }
+
+  const result = await getDeliverableAccess(id, session.user.id);
+  if (!result) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if (result.forbidden) {
+    return c.json({ status: 'error', message: 'Forbidden' }, 403);
+  }
+
+  if (!canUploadVersion(result.deliverable.status)) {
+    return c.json(
+      { status: 'error', message: 'Approved deliverables cannot receive new versions' },
+      403,
+    );
+  }
+
+  const key = buildFileKey(id, fileName);
+
+  try {
+    await uploadObject({
+      key,
+      body: new Uint8Array(await upload.arrayBuffer()),
+      contentType: mimeType,
+    });
+  } catch {
+    return c.json({ status: 'error', message: 'Failed to store file' }, 500);
+  }
+
+  const created = await db.transaction(async (tx) => {
+    const [locked] = await tx
+      .select({ id: deliverables.id, status: deliverables.status })
+      .from(deliverables)
+      .where(eq(deliverables.id, id))
+      .limit(1)
+      .for('update');
+
+    if (!locked) {
+      return null;
+    }
+
+    if (isDeliverableLocked(locked.status)) {
+      return { locked: true as const };
+    }
+
+    const [maxRow] = await tx
+      .select({ maxVersion: sql<number | null>`max(${deliverableVersions.versionNumber})` })
+      .from(deliverableVersions)
+      .where(eq(deliverableVersions.deliverableId, id));
+
+    const [row] = await tx
+      .insert(deliverableVersions)
+      .values({
+        deliverableId: id,
+        versionNumber: (maxRow?.maxVersion ?? 0) + 1,
+        fileKey: key,
+        fileName,
+        fileSize: upload.size,
+        mimeType,
+        uploadedBy: session.user.id,
+      })
+      .returning();
+
+    if (row) {
+      await logActivity(
+        {
+          projectId: result.deliverable.projectId,
+          actorId: session.user.id,
+          action: 'version_uploaded',
+          targetType: 'deliverable_version',
+          targetId: row.id,
+          metadata: { version_number: row.versionNumber },
+        },
+        tx,
+      );
+    }
+
+    return row;
+  });
+
+  if (!created) {
+    await deleteObject(key).catch(() => undefined);
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if ('locked' in created && created.locked) {
+    await deleteObject(key).catch(() => undefined);
     return c.json(
       { status: 'error', message: 'Approved deliverables cannot receive new versions' },
       403,
