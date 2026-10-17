@@ -24,6 +24,29 @@ export const createLinkVersionSchema = z.object({
   externalUrl: z.url('Enter a valid URL').max(2048),
 });
 
+export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+export const allowedFileMimeTypes = [
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+  'text/plain',
+  'text/markdown',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/zip',
+] as const;
+
+export type AllowedFileMimeType = (typeof allowedFileMimeTypes)[number];
+
+export function isAllowedFileMimeType(mimeType: string): mimeType is AllowedFileMimeType {
+  return (allowedFileMimeTypes as readonly string[]).includes(mimeType);
+}
+
+export const fileVersionAcceptAttribute = allowedFileMimeTypes.join(',');
+
 export const deliverableResponseSchema = z.object({
   id: z.uuid(),
   projectId: z.uuid(),
