@@ -1,4 +1,4 @@
-import { ExternalLink } from 'lucide-react';
+import { Download, ExternalLink } from 'lucide-react';
 import type { DeliverableVersionResponse } from '@ratify/shared';
 import { formatDate } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,15 +31,20 @@ function VersionsSkeleton() {
 interface DeliverableVersionsListProps {
   versions: DeliverableVersionResponse[] | undefined;
   isPending: boolean;
+  onDownload?: (version: DeliverableVersionResponse) => void;
 }
 
-export function DeliverableVersionsList({ versions, isPending }: DeliverableVersionsListProps) {
+export function DeliverableVersionsList({
+  versions,
+  isPending,
+  onDownload,
+}: DeliverableVersionsListProps) {
   if (isPending) return <VersionsSkeleton />;
 
   if (!versions || versions.length === 0) {
     return (
       <p className="text-body text-muted-foreground">
-        No versions yet. Add an external link to create the first version.
+        No versions yet. Upload a file or add an external link to create the first version.
       </p>
     );
   }
@@ -79,6 +84,16 @@ export function DeliverableVersionsList({ versions, isPending }: DeliverableVers
                 <ExternalLink size={14} strokeWidth={1.5} aria-hidden="true" />
                 Open link
               </a>
+            )}
+            {version.fileName && (
+              <button
+                type="button"
+                onClick={() => onDownload?.(version)}
+                className="inline-flex items-center gap-1.5 text-caption font-medium text-primary hover:underline"
+              >
+                <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+                Download
+              </button>
             )}
           </div>
         </div>

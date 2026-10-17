@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Pencil, Trash2, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Link as LinkIcon, Upload } from 'lucide-react';
 import { useDeliverable } from '@/hooks/deliverables/use-deliverable';
+import { useDownloadVersion } from '@/hooks/deliverables/use-download-version';
 import { DeliverableStatusBadge } from '@/components/deliverables/deliverable-status-badge';
 import { DeliverableVersionsList } from '@/components/deliverables/deliverable-versions-list';
 import { LinkVersionDialog } from '@/components/deliverables/link-version-dialog';
+import { FileVersionDialog } from '@/components/deliverables/file-version-dialog';
 import { UpdateDeliverableDialog } from '@/components/deliverables/update-deliverable-dialog';
 import { DeleteDeliverableDialog } from '@/components/deliverables/delete-deliverable-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { DeliverableVersionResponse } from '@ratify/shared';
 
 export const Route = createFileRoute('/admin/projects/$projectId/deliverables/$deliverableId')({
   component: DeliverableDetailPage,
@@ -30,9 +33,15 @@ function DeliverableDetailPage() {
   const { deliverableId } = Route.useParams();
   const navigate = useNavigate();
   const { data: deliverable, isPending, isError } = useDeliverable(deliverableId);
+  const downloadVersion = useDownloadVersion();
   const [editOpen, setEditOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [fileOpen, setFileOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const handleDownload = (version: DeliverableVersionResponse) => {
+    downloadVersion.mutate(version.id);
+  };
 
   if (isPending) return <DeliverableDetailSkeleton />;
 
@@ -120,10 +129,16 @@ function DeliverableDetailPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-h3">Version History</CardTitle>
-            <Button size="sm" onClick={() => setLinkOpen(true)} disabled={locked}>
-              <LinkIcon />
-              Add External Link
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setFileOpen(true)} disabled={locked}>
+                <Upload />
+                Upload File
+              </Button>
+              <Button size="sm" onClick={() => setLinkOpen(true)} disabled={locked}>
+                <LinkIcon />
+                Add External Link
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -135,6 +150,7 @@ function DeliverableDetailPage() {
           <DeliverableVersionsList
             versions={deliverable.versions}
             isPending={isPending}
+            onDownload={handleDownload}
           />
         </CardContent>
       </Card>
@@ -147,6 +163,14 @@ function DeliverableDetailPage() {
       <LinkVersionDialog
         open={linkOpen}
         onOpenChange={setLinkOpen}
+        deliverableId={deliverable.id}
+        projectId={deliverable.projectId}
+        deliverableTitle={deliverable.title}
+        nextVersionNumber={nextVersionNumber}
+      />
+      <FileVersionDialog
+        open={fileOpen}
+        onOpenChange={setFileOpen}
         deliverableId={deliverable.id}
         projectId={deliverable.projectId}
         deliverableTitle={deliverable.title}
