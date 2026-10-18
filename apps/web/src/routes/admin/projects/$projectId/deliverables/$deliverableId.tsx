@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Pencil, Trash2, Link as LinkIcon, Upload } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Link as LinkIcon, Upload, Send } from 'lucide-react';
 import { useDeliverable } from '@/hooks/deliverables/use-deliverable';
 import { useDownloadVersion } from '@/hooks/deliverables/use-download-version';
+import { useSubmitDeliverable } from '@/hooks/deliverables/use-submit-deliverable';
+import { canSubmitDeliverable } from '@ratify/shared';
 import { DeliverableStatusBadge } from '@/components/deliverables/deliverable-status-badge';
 import { DeliverableVersionsList } from '@/components/deliverables/deliverable-versions-list';
 import { LinkVersionDialog } from '@/components/deliverables/link-version-dialog';
@@ -34,6 +36,7 @@ function DeliverableDetailPage() {
   const navigate = useNavigate();
   const { data: deliverable, isPending, isError } = useDeliverable(deliverableId);
   const downloadVersion = useDownloadVersion();
+  const submitDeliverable = useSubmitDeliverable();
   const [editOpen, setEditOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [fileOpen, setFileOpen] = useState(false);
@@ -78,7 +81,21 @@ function DeliverableDetailPage() {
         <h2 className="text-h1 text-foreground">{deliverable.title}</h2>
         <DeliverableStatusBadge status={deliverable.status} />
         {!locked && (
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={submitDeliverable.isPending || !canSubmitDeliverable(deliverable.status)}
+              onClick={() =>
+                submitDeliverable.mutate({
+                  deliverableId: deliverable.id,
+                  projectId: deliverable.projectId,
+                })
+              }
+            >
+              <Send />
+              Submit for review
+            </Button>
             <Tooltip>
               <TooltipTrigger
                 render={

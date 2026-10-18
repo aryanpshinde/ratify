@@ -20,8 +20,11 @@ import { Route as AdminClientsRouteImport } from './routes/admin/clients'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as AdminProjectsProjectIdRouteImport } from './routes/admin/projects/$projectId'
+import { Route as PortalProjectsProjectIdRouteImport } from './routes/portal/projects/$projectId'
 import { Route as AdminProjectsProjectIdIndexRouteImport } from './routes/admin/projects/$projectId/index'
+import { Route as PortalProjectsProjectIdIndexRouteImport } from './routes/portal/projects/$projectId/index'
 import { Route as AdminProjectsProjectIdDeliverablesDeliverableIdRouteImport } from './routes/admin/projects/$projectId/deliverables/$deliverableId'
+import { Route as PortalProjectsProjectIdDeliverablesDeliverableIdRouteImport } from './routes/portal/projects/$projectId/deliverables/$deliverableId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -77,17 +80,34 @@ const AdminProjectsProjectIdRoute = AdminProjectsProjectIdRouteImport.update({
   path: '/projects/$projectId',
   getParentRoute: () => AdminRoute,
 } as any)
+const PortalProjectsProjectIdRoute = PortalProjectsProjectIdRouteImport.update({
+  id: '/projects/$projectId',
+  path: '/projects/$projectId',
+  getParentRoute: () => PortalRoute,
+} as any)
 const AdminProjectsProjectIdIndexRoute =
   AdminProjectsProjectIdIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AdminProjectsProjectIdRoute,
   } as any)
+const PortalProjectsProjectIdIndexRoute =
+  PortalProjectsProjectIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => PortalProjectsProjectIdRoute,
+  } as any)
 const AdminProjectsProjectIdDeliverablesDeliverableIdRoute =
   AdminProjectsProjectIdDeliverablesDeliverableIdRouteImport.update({
     id: '/deliverables/$deliverableId',
     path: '/deliverables/$deliverableId',
     getParentRoute: () => AdminProjectsProjectIdRoute,
+  } as any)
+const PortalProjectsProjectIdDeliverablesDeliverableIdRoute =
+  PortalProjectsProjectIdDeliverablesDeliverableIdRouteImport.update({
+    id: '/deliverables/$deliverableId',
+    path: '/deliverables/$deliverableId',
+    getParentRoute: () => PortalProjectsProjectIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -101,8 +121,11 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/admin/projects/$projectId': typeof AdminProjectsProjectIdRouteWithChildren
+  '/portal/projects/$projectId': typeof PortalProjectsProjectIdRouteWithChildren
   '/admin/projects/$projectId/': typeof AdminProjectsProjectIdIndexRoute
+  '/portal/projects/$projectId/': typeof PortalProjectsProjectIdIndexRoute
   '/admin/projects/$projectId/deliverables/$deliverableId': typeof AdminProjectsProjectIdDeliverablesDeliverableIdRoute
+  '/portal/projects/$projectId/deliverables/$deliverableId': typeof PortalProjectsProjectIdDeliverablesDeliverableIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -113,7 +136,9 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/portal': typeof PortalIndexRoute
   '/admin/projects/$projectId': typeof AdminProjectsProjectIdIndexRoute
+  '/portal/projects/$projectId': typeof PortalProjectsProjectIdIndexRoute
   '/admin/projects/$projectId/deliverables/$deliverableId': typeof AdminProjectsProjectIdDeliverablesDeliverableIdRoute
+  '/portal/projects/$projectId/deliverables/$deliverableId': typeof PortalProjectsProjectIdDeliverablesDeliverableIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -128,8 +153,11 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/admin/projects/$projectId': typeof AdminProjectsProjectIdRouteWithChildren
+  '/portal/projects/$projectId': typeof PortalProjectsProjectIdRouteWithChildren
   '/admin/projects/$projectId/': typeof AdminProjectsProjectIdIndexRoute
+  '/portal/projects/$projectId/': typeof PortalProjectsProjectIdIndexRoute
   '/admin/projects/$projectId/deliverables/$deliverableId': typeof AdminProjectsProjectIdDeliverablesDeliverableIdRoute
+  '/portal/projects/$projectId/deliverables/$deliverableId': typeof PortalProjectsProjectIdDeliverablesDeliverableIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -144,8 +172,11 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/portal/'
     | '/admin/projects/$projectId'
+    | '/portal/projects/$projectId'
     | '/admin/projects/$projectId/'
+    | '/portal/projects/$projectId/'
     | '/admin/projects/$projectId/deliverables/$deliverableId'
+    | '/portal/projects/$projectId/deliverables/$deliverableId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -156,7 +187,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/portal'
     | '/admin/projects/$projectId'
+    | '/portal/projects/$projectId'
     | '/admin/projects/$projectId/deliverables/$deliverableId'
+    | '/portal/projects/$projectId/deliverables/$deliverableId'
   id:
     | '__root__'
     | '/'
@@ -170,8 +203,11 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/portal/'
     | '/admin/projects/$projectId'
+    | '/portal/projects/$projectId'
     | '/admin/projects/$projectId/'
+    | '/portal/projects/$projectId/'
     | '/admin/projects/$projectId/deliverables/$deliverableId'
+    | '/portal/projects/$projectId/deliverables/$deliverableId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -261,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProjectsProjectIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/portal/projects/$projectId': {
+      id: '/portal/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/portal/projects/$projectId'
+      preLoaderRoute: typeof PortalProjectsProjectIdRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/admin/projects/$projectId/': {
       id: '/admin/projects/$projectId/'
       path: '/'
@@ -268,12 +311,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProjectsProjectIdIndexRouteImport
       parentRoute: typeof AdminProjectsProjectIdRoute
     }
+    '/portal/projects/$projectId/': {
+      id: '/portal/projects/$projectId/'
+      path: '/'
+      fullPath: '/portal/projects/$projectId/'
+      preLoaderRoute: typeof PortalProjectsProjectIdIndexRouteImport
+      parentRoute: typeof PortalProjectsProjectIdRoute
+    }
     '/admin/projects/$projectId/deliverables/$deliverableId': {
       id: '/admin/projects/$projectId/deliverables/$deliverableId'
       path: '/deliverables/$deliverableId'
       fullPath: '/admin/projects/$projectId/deliverables/$deliverableId'
       preLoaderRoute: typeof AdminProjectsProjectIdDeliverablesDeliverableIdRouteImport
       parentRoute: typeof AdminProjectsProjectIdRoute
+    }
+    '/portal/projects/$projectId/deliverables/$deliverableId': {
+      id: '/portal/projects/$projectId/deliverables/$deliverableId'
+      path: '/deliverables/$deliverableId'
+      fullPath: '/portal/projects/$projectId/deliverables/$deliverableId'
+      preLoaderRoute: typeof PortalProjectsProjectIdDeliverablesDeliverableIdRouteImport
+      parentRoute: typeof PortalProjectsProjectIdRoute
     }
   }
 }
@@ -321,12 +378,31 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface PortalProjectsProjectIdRouteChildren {
+  PortalProjectsProjectIdIndexRoute: typeof PortalProjectsProjectIdIndexRoute
+  PortalProjectsProjectIdDeliverablesDeliverableIdRoute: typeof PortalProjectsProjectIdDeliverablesDeliverableIdRoute
+}
+
+const PortalProjectsProjectIdRouteChildren: PortalProjectsProjectIdRouteChildren =
+  {
+    PortalProjectsProjectIdIndexRoute: PortalProjectsProjectIdIndexRoute,
+    PortalProjectsProjectIdDeliverablesDeliverableIdRoute:
+      PortalProjectsProjectIdDeliverablesDeliverableIdRoute,
+  }
+
+const PortalProjectsProjectIdRouteWithChildren =
+  PortalProjectsProjectIdRoute._addFileChildren(
+    PortalProjectsProjectIdRouteChildren,
+  )
+
 interface PortalRouteChildren {
   PortalIndexRoute: typeof PortalIndexRoute
+  PortalProjectsProjectIdRoute: typeof PortalProjectsProjectIdRouteWithChildren
 }
 
 const PortalRouteChildren: PortalRouteChildren = {
   PortalIndexRoute: PortalIndexRoute,
+  PortalProjectsProjectIdRoute: PortalProjectsProjectIdRouteWithChildren,
 }
 
 const PortalRouteWithChildren =
