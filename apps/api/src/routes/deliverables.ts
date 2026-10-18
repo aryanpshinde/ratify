@@ -6,12 +6,15 @@ import { getSession } from '../lib/session.js';
 import { requireProjectAccess } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
-import { isDeliverableLocked, canUploadVersion } from '../lib/deliverable-guards.js';
 import {
+  canSubmitDeliverable,
+  canUploadVersion,
   createLinkVersionSchema,
+  isDeliverableLocked,
   updateDeliverableSchema,
   MAX_FILE_SIZE_BYTES,
 } from '@ratify/shared';
+import { deliverableColumns, versionColumns } from '../lib/deliverable-columns.js';
 import {
   sanitizeFileName,
   isFileNameTooLong,
@@ -23,28 +26,7 @@ import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
 
 const deliverableRoutes = new Hono();
 
-const deliverableColumns = {
-  id: deliverables.id,
-  projectId: deliverables.projectId,
-  createdBy: deliverables.createdBy,
-  title: deliverables.title,
-  description: deliverables.description,
-  status: deliverables.status,
-  createdAt: deliverables.createdAt,
-  updatedAt: deliverables.updatedAt,
-};
-
-const versionColumns = {
-  id: deliverableVersions.id,
-  deliverableId: deliverableVersions.deliverableId,
-  versionNumber: deliverableVersions.versionNumber,
-  externalUrl: deliverableVersions.externalUrl,
-  fileName: deliverableVersions.fileName,
-  fileSize: deliverableVersions.fileSize,
-  mimeType: deliverableVersions.mimeType,
-  uploadedBy: deliverableVersions.uploadedBy,
-  createdAt: deliverableVersions.createdAt,
-};
+const fileRequiredIssue = { path: ['file'], code: 'invalid_type', message: 'File is required' };
 
 async function getDeliverableAccess(deliverableId: string, userId: string) {
   const [deliverable] = await db
@@ -325,8 +307,6 @@ deliverableRoutes.post('/:id/versions/link', async (c) => {
   return c.json({ status: 'ok', data: created }, 201);
 });
 
-const fileRequiredIssue = { path: ['file'], code: 'invalid_type', message: 'File is required' };
-
 const fileOversizeIssue = [
   { path: ['file'], code: 'custom', message: 'File exceeds the 10 MB limit' },
 ];
@@ -523,5 +503,77 @@ deliverableRoutes.post(
     return c.json({ status: 'ok', data: created }, 201);
   },
 );
+
+deliverableRoutes.post('/:id/submit', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const result = await getDeliverableAccess(id, session.user.id);
+  if (!result) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if (result.forbidden) {
+    return c.json({ status: 'error', message: 'Forbidden' }, 403);
+  }
+
+  const updated = await db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({ id: deliverables.id, status: deliverables.status })
+      .from(deliverables)
+      .where(eq(deliverables.id, id))
+      .limit(1)
+      .for('update');
+
+    if (!current) {
+      return null;
+    }
+
+    if (!canSubmitDeliverable(current.status)) {
+      return { invalid: true as const };
+    }
+
+    const [row] = await tx
+      .update(deliverables)
+      .set({ status: 'submitted' })
+      .where(eq(deliverables.id, id))
+      .returning({ ...deliverableColumns });
+
+    if (row) {
+      await logActivity(
+        {
+          projectId: result.deliverable.projectId,
+          actorId: session.user.id,
+          action: 'deliverable_submitted',
+          targetType: 'deliverable',
+          targetId: row.id,
+        },
+        tx,
+      );
+    }
+
+    return row;
+  });
+
+  if (!updated) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if ('invalid' in updated && updated.invalid) {
+    return c.json(
+      { status: 'error', message: 'Only draft or rejected deliverables can be submitted' },
+      403,
+    );
+  }
+
+  return c.json({ status: 'ok', data: updated });
+});
 
 export default deliverableRoutes;

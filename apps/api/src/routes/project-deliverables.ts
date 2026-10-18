@@ -5,6 +5,11 @@ import { getSession } from '../lib/session.js';
 import { requireProjectAccess } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
+import {
+  assembleDeliverableList,
+  deliverableColumns,
+  versionColumns,
+} from '../lib/deliverable-columns.js';
 import { createDeliverableSchema } from '@ratify/shared';
 import { desc, eq, inArray } from 'drizzle-orm';
 
@@ -31,33 +36,14 @@ projectDeliverableRoutes.get('/:projectId/deliverables', async (c) => {
   }
 
   const rows = await db
-    .select({
-      id: deliverables.id,
-      projectId: deliverables.projectId,
-      createdBy: deliverables.createdBy,
-      title: deliverables.title,
-      description: deliverables.description,
-      status: deliverables.status,
-      createdAt: deliverables.createdAt,
-      updatedAt: deliverables.updatedAt,
-    })
+    .select({ ...deliverableColumns })
     .from(deliverables)
     .where(eq(deliverables.projectId, projectId))
     .orderBy(desc(deliverables.updatedAt));
 
   const versions = rows.length
     ? await db
-        .select({
-          id: deliverableVersions.id,
-          deliverableId: deliverableVersions.deliverableId,
-          versionNumber: deliverableVersions.versionNumber,
-          externalUrl: deliverableVersions.externalUrl,
-          fileName: deliverableVersions.fileName,
-          fileSize: deliverableVersions.fileSize,
-          mimeType: deliverableVersions.mimeType,
-          uploadedBy: deliverableVersions.uploadedBy,
-          createdAt: deliverableVersions.createdAt,
-        })
+        .select({ ...versionColumns })
         .from(deliverableVersions)
         .where(
           inArray(
@@ -68,28 +54,7 @@ projectDeliverableRoutes.get('/:projectId/deliverables', async (c) => {
         .orderBy(desc(deliverableVersions.versionNumber))
     : [];
 
-  const latestByDeliverable = new Map<string, (typeof versions)[number]>();
-  for (const version of versions) {
-    if (!latestByDeliverable.has(version.deliverableId)) {
-      latestByDeliverable.set(version.deliverableId, version);
-    }
-  }
-
-  const countByDeliverable = new Map<string, number>();
-  for (const version of versions) {
-    countByDeliverable.set(
-      version.deliverableId,
-      (countByDeliverable.get(version.deliverableId) ?? 0) + 1,
-    );
-  }
-
-  const data = rows.map((row) => ({
-    ...row,
-    versionCount: countByDeliverable.get(row.id) ?? 0,
-    latestVersion: latestByDeliverable.get(row.id) ?? null,
-  }));
-
-  return c.json({ status: 'ok', data });
+  return c.json({ status: 'ok', data: assembleDeliverableList(rows, versions) });
 });
 
 projectDeliverableRoutes.post('/:projectId/deliverables', async (c) => {

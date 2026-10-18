@@ -1,8 +1,18 @@
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { projects, projectMembers, clients } from '../db/schema.js';
+import { deliverables, deliverableVersions } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
-import { and, eq, ne, desc } from 'drizzle-orm';
+import { getUuidParam } from '../lib/params.js';
+import { requirePortalProjectAccess } from '../lib/access.js';
+import {
+  assembleDeliverableList,
+  deliverableColumns,
+  versionColumns,
+} from '../lib/deliverable-columns.js';
+import { getFileDownloadUrl } from '../lib/storage.js';
+import { isPortalDeliverableVisible } from '@ratify/shared';
+import { and, desc, eq, inArray, ne } from 'drizzle-orm';
+import { clients, projectMembers, projects } from '../db/schema.js';
 
 const portalRoutes = new Hono();
 
@@ -38,6 +48,191 @@ portalRoutes.get('/projects', async (c) => {
     .orderBy(desc(projects.updatedAt));
 
   return c.json({ status: 'ok', data: rows });
+});
+
+portalRoutes.get('/projects/:projectId', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const projectId = getUuidParam(c, 'projectId');
+  if (!projectId) {
+    return c.json({ status: 'error', message: 'Invalid projectId' }, 400);
+  }
+
+  const access = await requirePortalProjectAccess(db, projectId, session.user.id);
+  if (!access) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
+  return c.json({
+    status: 'ok',
+    data: {
+      ...access.project,
+      clientName: access.clientName,
+      clientCompany: access.clientCompany,
+    },
+  });
+});
+
+portalRoutes.get('/projects/:projectId/deliverables', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const projectId = getUuidParam(c, 'projectId');
+  if (!projectId) {
+    return c.json({ status: 'error', message: 'Invalid projectId' }, 400);
+  }
+
+  const access = await requirePortalProjectAccess(db, projectId, session.user.id);
+  if (!access) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
+  const rows = await db
+    .select({ ...deliverableColumns })
+    .from(deliverables)
+    .where(and(eq(deliverables.projectId, projectId), ne(deliverables.status, 'draft')))
+    .orderBy(desc(deliverables.updatedAt));
+
+  const versions = rows.length
+    ? await db
+        .select({ ...versionColumns })
+        .from(deliverableVersions)
+        .where(
+          inArray(
+            deliverableVersions.deliverableId,
+            rows.map((row) => row.id),
+          ),
+        )
+        .orderBy(desc(deliverableVersions.versionNumber))
+    : [];
+
+  return c.json({ status: 'ok', data: assembleDeliverableList(rows, versions) });
+});
+
+async function findPortalDeliverable(deliverableId: string, userId: string) {
+  const [deliverable] = await db
+    .select({ ...deliverableColumns })
+    .from(deliverables)
+    .where(eq(deliverables.id, deliverableId))
+    .limit(1);
+
+  if (!deliverable) {
+    return null;
+  }
+
+  const access = await requirePortalProjectAccess(db, deliverable.projectId, userId);
+  if (!access) {
+    return null;
+  }
+
+  if (!isPortalDeliverableVisible(deliverable.status)) {
+    return null;
+  }
+
+  return deliverable;
+}
+
+async function findPortalVersions(deliverableId: string) {
+  return db
+    .select({ ...versionColumns })
+    .from(deliverableVersions)
+    .where(eq(deliverableVersions.deliverableId, deliverableId))
+    .orderBy(desc(deliverableVersions.versionNumber));
+}
+
+portalRoutes.get('/deliverables/:id', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const deliverable = await findPortalDeliverable(id, session.user.id);
+  if (!deliverable) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  const versions = await findPortalVersions(id);
+
+  return c.json({ status: 'ok', data: { ...deliverable, versions } });
+});
+
+portalRoutes.get('/deliverables/:id/versions', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const deliverable = await findPortalDeliverable(id, session.user.id);
+  if (!deliverable) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  const versions = await findPortalVersions(id);
+
+  return c.json({ status: 'ok', data: versions });
+});
+
+portalRoutes.get('/versions/:id/download', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const [version] = await db
+    .select({
+      fileKey: deliverableVersions.fileKey,
+      fileName: deliverableVersions.fileName,
+      projectId: deliverables.projectId,
+      status: deliverables.status,
+    })
+    .from(deliverableVersions)
+    .innerJoin(deliverables, eq(deliverableVersions.deliverableId, deliverables.id))
+    .where(eq(deliverableVersions.id, id))
+    .limit(1);
+
+  if (!version) {
+    return c.json({ status: 'error', message: 'Version not found' }, 404);
+  }
+
+  const access = await requirePortalProjectAccess(db, version.projectId, session.user.id);
+  if (!access) {
+    return c.json({ status: 'error', message: 'Version not found' }, 404);
+  }
+
+  if (!isPortalDeliverableVisible(version.status)) {
+    return c.json({ status: 'error', message: 'Version not found' }, 404);
+  }
+
+  if (!version.fileKey) {
+    return c.json({ status: 'error', message: 'This version is an external link' }, 400);
+  }
+
+  try {
+    const url = await getFileDownloadUrl(version.fileKey, version.fileName ?? 'download');
+    return c.json({ status: 'ok', data: { url } });
+  } catch {
+    return c.json({ status: 'error', message: 'Failed to create download URL' }, 500);
+  }
 });
 
 export default portalRoutes;
