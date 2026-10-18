@@ -88,3 +88,19 @@ export type DeliverableResponse = z.infer<typeof deliverableResponseSchema>;
 export type DeliverableVersionResponse = z.infer<typeof deliverableVersionResponseSchema>;
 export type DeliverableListItem = z.infer<typeof deliverableListItemSchema>;
 export type DeliverableDetail = z.infer<typeof deliverableDetailSchema>;
+
+export function isDeliverableLocked(status: DeliverableStatus): boolean {
+  return status === 'approved';
+}
+
+export function canUploadVersion(status: DeliverableStatus): boolean {
+  return !isDeliverableLocked(status);
+}
+
+export function canSubmitDeliverable(status: DeliverableStatus): boolean {
+  return status === 'draft' || status === 'rejected';
+}
+
+export function isPortalDeliverableVisible(status: DeliverableStatus): boolean {
+  return status !== 'draft';
+}
