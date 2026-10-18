@@ -6,7 +6,8 @@ import { requireProjectAccess } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
 import { createProjectSchema, updateProjectSchema } from '@ratify/shared';
-import { desc, eq, and } from 'drizzle-orm';
+import { desc, eq, and, lt, or } from 'drizzle-orm';
+import { parseActivityFeedParams, buildActivityCursor } from '../lib/pagination-guards.js';
 
 const projectRoutes = new Hono();
 
@@ -284,6 +285,25 @@ projectRoutes.get('/:id/activity', async (c) => {
     return c.json({ status: 'error', message: 'Project not found' }, 404);
   }
 
+  const params = parseActivityFeedParams(c.req.query('limit'), c.req.query('cursor'));
+  if (!params) {
+    return c.json({ status: 'error', message: 'Invalid pagination params' }, 400);
+  }
+
+  let whereClause = eq(activityLogs.projectId, id);
+  if (params.cursor) {
+    whereClause = and(
+      whereClause,
+      or(
+        lt(activityLogs.createdAt, new Date(params.cursor.t)),
+        and(
+          eq(activityLogs.createdAt, new Date(params.cursor.t)),
+          lt(activityLogs.id, params.cursor.i),
+        ),
+      ),
+    )!;
+  }
+
   const rows = await db
     .select({
       id: activityLogs.id,
@@ -298,10 +318,15 @@ projectRoutes.get('/:id/activity', async (c) => {
     })
     .from(activityLogs)
     .leftJoin(users, eq(activityLogs.actorId, users.id))
-    .where(eq(activityLogs.projectId, id))
-    .orderBy(desc(activityLogs.createdAt));
+    .where(whereClause)
+    .orderBy(desc(activityLogs.createdAt), desc(activityLogs.id))
+    .limit(params.limit);
 
-  return c.json({ status: 'ok', data: rows });
+  const last = rows[rows.length - 1] ?? null;
+  const nextCursor =
+    rows.length === params.limit && last ? buildActivityCursor(last.createdAt, last.id) : null;
+
+  return c.json({ status: 'ok', data: { items: rows, nextCursor } });
 });
 
 export default projectRoutes;

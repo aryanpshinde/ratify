@@ -1,15 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
-import type { ActivityLogResponse } from '@ratify/shared';
+import type { ActivityLogPage } from '@ratify/shared';
 
-export function fetchProjectActivity(projectId: string): Promise<ActivityLogResponse[]> {
-  return apiFetch<ActivityLogResponse[]>(`/projects/${projectId}/activity`);
+export function fetchProjectActivity(
+  projectId: string,
+  cursor: string | null = null,
+): Promise<ActivityLogPage> {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+  return apiFetch<ActivityLogPage>(`/projects/${projectId}/activity${query}`);
 }
 
 export function useProjectActivity(projectId: string) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['projects', projectId, 'activity'],
-    queryFn: () => fetchProjectActivity(projectId),
+    queryFn: ({ pageParam }) => fetchProjectActivity(projectId, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled: !!projectId,
   });
 }

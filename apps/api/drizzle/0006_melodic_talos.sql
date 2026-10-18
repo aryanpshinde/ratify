@@ -1,0 +1,2 @@
+ALTER TABLE "activity_logs" ALTER COLUMN "created_at" SET DEFAULT date_trunc('milliseconds', now());--> statement-breakpoint
+CREATE INDEX "activity_logs_project_created_idx" ON "activity_logs" USING btree ("project_id","created_at" DESC NULLS LAST,"id" DESC NULLS LAST);

@@ -204,11 +204,18 @@ export const activityLogs = pgTable(
     targetType: varchar('target_type', { length: 50 }),
     targetId: uuid('target_id'),
     metadata: jsonb('metadata'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at')
+      .notNull()
+      .default(sql`date_trunc('milliseconds', now())`),
   },
   (table) => [
     index('activity_logs_projectId_idx').on(table.projectId),
     index('activity_logs_createdAt_idx').on(table.createdAt),
+    index('activity_logs_project_created_idx').on(
+      table.projectId,
+      table.createdAt.desc(),
+      table.id.desc(),
+    ),
     check(
       'activity_logs_target_pair_chk',
       sql`(${table.targetType} IS NULL AND ${table.targetId} IS NULL) OR (${table.targetType} IS NOT NULL AND ${table.targetId} IS NOT NULL)`,
