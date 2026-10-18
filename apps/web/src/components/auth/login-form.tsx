@@ -56,7 +56,7 @@ export function LoginForm() {
               aria-invalid={!!errors.email}
               {...form.register('email')}
             />
-            {errors.email && <p className="text-sm text-error">{errors.email.message}</p>}
+            {errors.email && <p className="text-caption text-error">{errors.email.message}</p>}
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
@@ -68,9 +68,11 @@ export function LoginForm() {
               aria-invalid={!!errors.password}
               {...form.register('password')}
             />
-            {errors.password && <p className="text-sm text-error">{errors.password.message}</p>}
+            {errors.password && (
+              <p className="text-caption text-error">{errors.password.message}</p>
+            )}
           </div>
-          {errors.root?.message && <p className="text-sm text-error">{errors.root.message}</p>}
+          {errors.root?.message && <p className="text-caption text-error">{errors.root.message}</p>}
           <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </Button>
