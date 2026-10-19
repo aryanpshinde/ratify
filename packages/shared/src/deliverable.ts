@@ -101,6 +101,14 @@ export function canSubmitDeliverable(status: DeliverableStatus): boolean {
   return status === 'draft' || status === 'rejected';
 }
 
+export function canReceiveFeedback(status: DeliverableStatus): boolean {
+  return status === 'submitted';
+}
+
+export function canDecideDeliverable(status: DeliverableStatus): boolean {
+  return status === 'submitted';
+}
+
 export function isPortalDeliverableVisible(status: DeliverableStatus): boolean {
   return status !== 'draft';
 }

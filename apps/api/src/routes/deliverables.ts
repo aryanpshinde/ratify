@@ -15,6 +15,7 @@ import {
   MAX_FILE_SIZE_BYTES,
 } from '@ratify/shared';
 import { deliverableColumns, versionColumns } from '../lib/deliverable-columns.js';
+import { registerFeedbackRoutes } from '../lib/feedback-routes.js';
 import {
   sanitizeFileName,
   isFileNameTooLong,
@@ -503,6 +504,23 @@ deliverableRoutes.post(
     return c.json({ status: 'ok', data: created }, 201);
   },
 );
+
+async function resolveAdminFeedbackAccess(deliverableId: string, userId: string) {
+  const result = await getDeliverableAccess(deliverableId, userId);
+  if (!result) {
+    return null;
+  }
+  if (result.forbidden) {
+    return { forbidden: true as const };
+  }
+  return {
+    deliverableId,
+    projectId: result.deliverable.projectId,
+    status: result.deliverable.status,
+  };
+}
+
+registerFeedbackRoutes(deliverableRoutes, '', resolveAdminFeedbackAccess, 'admin');
 
 deliverableRoutes.post('/:id/submit', async (c) => {
   const session = await getSession(c);

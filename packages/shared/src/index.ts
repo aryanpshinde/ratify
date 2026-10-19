@@ -4,3 +4,4 @@ export * from './project.js';
 export * from './activity.js';
 export * from './invitation.js';
 export * from './deliverable.js';
+export * from './feedback.js';

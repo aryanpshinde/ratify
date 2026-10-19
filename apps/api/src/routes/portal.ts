@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { db } from '../db/index.js';
 import { deliverables, deliverableVersions } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
@@ -10,7 +11,14 @@ import {
   versionColumns,
 } from '../lib/deliverable-columns.js';
 import { getFileDownloadUrl } from '../lib/storage.js';
-import { isPortalDeliverableVisible } from '@ratify/shared';
+import {
+  approveDeliverableSchema,
+  canDecideDeliverable,
+  isPortalDeliverableVisible,
+  rejectDeliverableSchema,
+} from '@ratify/shared';
+import { registerFeedbackRoutes } from '../lib/feedback-routes.js';
+import { logActivity } from '../lib/activity.js';
 import { and, desc, eq, inArray, ne } from 'drizzle-orm';
 import { clients, projectMembers, projects } from '../db/schema.js';
 
@@ -234,5 +242,108 @@ portalRoutes.get('/versions/:id/download', async (c) => {
     return c.json({ status: 'error', message: 'Failed to create download URL' }, 500);
   }
 });
+
+async function resolvePortalFeedbackAccess(deliverableId: string, userId: string) {
+  const deliverable = await findPortalDeliverable(deliverableId, userId);
+  if (!deliverable) {
+    return null;
+  }
+  return { deliverableId, projectId: deliverable.projectId, status: deliverable.status };
+}
+
+registerFeedbackRoutes(portalRoutes, '/deliverables', resolvePortalFeedbackAccess, 'client');
+
+async function handlePortalDecision(c: Context, decision: 'approved' | 'rejected') {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const id = getUuidParam(c, 'id');
+  if (!id) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const body: unknown = await c.req.json().catch(() => ({}));
+  const schema = decision === 'approved' ? approveDeliverableSchema : rejectDeliverableSchema;
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      { status: 'error', message: 'Validation Failed', error: parsed.error.issues },
+      400,
+    );
+  }
+
+  const deliverable = await findPortalDeliverable(id, session.user.id);
+  if (!deliverable) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if (!canDecideDeliverable(deliverable.status)) {
+    return c.json(
+      {
+        status: 'error',
+        message: `Only submitted deliverables can be ${decision}`,
+      },
+      403,
+    );
+  }
+
+  const updated = await db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({ id: deliverables.id, status: deliverables.status })
+      .from(deliverables)
+      .where(eq(deliverables.id, id))
+      .limit(1)
+      .for('update');
+
+    if (!current) {
+      return null;
+    }
+
+    if (!canDecideDeliverable(current.status)) {
+      return { invalid: true as const };
+    }
+
+    const [row] = await tx
+      .update(deliverables)
+      .set({ status: decision })
+      .where(eq(deliverables.id, id))
+      .returning({ ...deliverableColumns });
+
+    if (row) {
+      await logActivity(
+        {
+          projectId: deliverable.projectId,
+          actorId: session.user.id,
+          action: decision === 'approved' ? 'deliverable_approved' : 'deliverable_rejected',
+          targetType: 'deliverable',
+          targetId: row.id,
+          metadata: parsed.data.note === undefined ? null : { note: parsed.data.note },
+        },
+        tx,
+      );
+    }
+
+    return row;
+  });
+
+  if (!updated) {
+    return c.json({ status: 'error', message: 'Deliverable not found' }, 404);
+  }
+
+  if ('invalid' in updated && updated.invalid) {
+    return c.json(
+      { status: 'error', message: `Only submitted deliverables can be ${decision}` },
+      403,
+    );
+  }
+
+  return c.json({ status: 'ok', data: updated });
+}
+
+portalRoutes.post('/deliverables/:id/approve', (c) => handlePortalDecision(c, 'approved'));
+
+portalRoutes.post('/deliverables/:id/reject', (c) => handlePortalDecision(c, 'rejected'));
 
 export default portalRoutes;

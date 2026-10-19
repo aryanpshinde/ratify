@@ -57,6 +57,13 @@
       "when": 1792310414802,
       "tag": "0007_regular_mauler",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792381208113,
+      "tag": "0008_shallow_makkari",
+      "breakpoints": true
     }
   ]
 }

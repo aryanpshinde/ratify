@@ -1,10 +1,9 @@
-import { useEffect, useRef } from 'react';
 import { History } from 'lucide-react';
 import type { ProjectStatus } from '@ratify/shared';
 import { useProjectActivity } from '@/hooks/projects/use-project-activity';
 import { timeAgo } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import { BoundedFeed } from '@/components/paginated/bounded-feed';
 import { ProjectStatusBadge } from './project-status-badge';
 
 const ACTION_LABELS: Record<string, string> = {
@@ -72,27 +71,6 @@ interface ActivityFeedProps {
 export function ActivityFeed({ projectId }: ActivityFeedProps) {
   const { data, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useProjectActivity(projectId);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    const sentinel = sentinelRef.current;
-    if (!container || !sentinel || !hasNextPage) {
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          void fetchNextPage();
-        }
-      },
-      { root: container, rootMargin: '0px 0px 24px 0px', threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasNextPage, isFetchingNextPage]);
 
   if (isPending) return <ActivityFeedSkeleton />;
   if (isError) return <p className="text-body text-error">Failed to load activity.</p>;
@@ -101,12 +79,13 @@ export function ActivityFeed({ projectId }: ActivityFeedProps) {
   if (activities.length === 0) return <ActivityFeedEmpty />;
 
   return (
-    <div
-      ref={containerRef}
-      role="region"
-      aria-label="Project activity timeline"
-      tabIndex={0}
-      className="max-h-[20rem] overflow-y-auto scrollbar-thin rounded-md pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+    <BoundedFeed
+      label="Project activity timeline"
+      loadMoreLabel="Load older activity"
+      endLabel="End of activity"
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      fetchNextPage={fetchNextPage}
     >
       {activities.map((item, index) => (
         <div key={item.id} className="relative flex gap-3 pb-5">
@@ -131,20 +110,6 @@ export function ActivityFeed({ projectId }: ActivityFeedProps) {
           </div>
         </div>
       ))}
-      <div ref={sentinelRef} className="flex items-center justify-end pt-1">
-        {hasNextPage ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-          >
-            {isFetchingNextPage ? 'Loading...' : 'Load older activity'}
-          </Button>
-        ) : (
-          <span className="text-caption text-muted-foreground">End of activity</span>
-        )}
-      </div>
-    </div>
+    </BoundedFeed>
   );
 }

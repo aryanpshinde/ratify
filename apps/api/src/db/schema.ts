@@ -13,6 +13,7 @@ import {
   integer,
   jsonb,
   check,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 export const projectStatusEnum = pgEnum('project_status', [
   'planning',
@@ -327,6 +328,48 @@ export const deliverableVersions = pgTable(
   ],
 );
 
+export const feedback = pgTable(
+  'feedback',
+  {
+    id: uuid('id')
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    versionId: uuid('version_id')
+      .notNull()
+      .references(() => deliverableVersions.id, { onDelete: 'cascade' }),
+    parentId: uuid('parent_id').references((): AnyPgColumn => feedback.id, {
+      onDelete: 'cascade',
+    }),
+    authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
+    body: varchar('body', { length: 2000 }).notNull(),
+    createdAt: timestamp('created_at')
+      .notNull()
+      .default(sql`date_trunc('milliseconds', now())`),
+  },
+  (table) => [
+    index('feedback_versionId_idx').on(table.versionId),
+    index('feedback_parentId_idx').on(table.parentId),
+    check('feedback_body_nonempty_chk', sql`trim(${table.body}) <> ''`),
+  ],
+);
+
+export const feedbackRelations = relations(feedback, ({ one, many }) => ({
+  version: one(deliverableVersions, {
+    fields: [feedback.versionId],
+    references: [deliverableVersions.id],
+  }),
+  parent: one(feedback, {
+    fields: [feedback.parentId],
+    references: [feedback.id],
+    relationName: 'feedbackThread',
+  }),
+  replies: many(feedback, { relationName: 'feedbackThread' }),
+  author: one(users, {
+    fields: [feedback.authorId],
+    references: [users.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
@@ -338,6 +381,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sentInvitations: many(invitations),
   createdDeliverables: many(deliverables),
   uploadedVersions: many(deliverableVersions),
+  feedback: many(feedback),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({

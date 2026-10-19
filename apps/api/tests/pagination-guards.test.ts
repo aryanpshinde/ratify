@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { encodeActivityCursor } from '@ratify/shared';
-import { parseActivityFeedParams } from '../src/lib/pagination-guards.js';
+import {
+  buildActivityCursor,
+  parseActivityFeedParams,
+  parseFeedbackFeedParams,
+} from '../src/lib/pagination-guards.js';
 
 const cursor = { t: '2026-10-18T07:26:23.480Z', i: '97b1f58d-944f-4e8e-a5e1-9cceeadf70e1' };
 
@@ -31,5 +35,32 @@ describe('parseActivityFeedParams', () => {
   it('rejects invalid cursors', () => {
     expect(parseActivityFeedParams('10', 'nonsense')).toBeNull();
     expect(parseActivityFeedParams('10', '!!!')).toBeNull();
+  });
+});
+
+describe('parseFeedbackFeedParams', () => {
+  it('applies the feedback default page size', () => {
+    expect(parseFeedbackFeedParams(null, null)).toEqual({ limit: 10, cursor: null });
+  });
+
+  it('roundtrips a cursor built by buildActivityCursor', () => {
+    const createdAt = new Date('2026-10-19T08:00:00.000Z');
+    const id = '97b1f58d-944f-4e8e-a5e1-9cceeadf70e1';
+    const parsed = parseFeedbackFeedParams('5', buildActivityCursor(createdAt, id));
+    expect(parsed).toEqual({
+      limit: 5,
+      cursor: { t: '2026-10-19T08:00:00.000Z', i: id },
+    });
+  });
+
+  it('rejects out-of-range or non-integer limits', () => {
+    expect(parseFeedbackFeedParams('0', null)).toBeNull();
+    expect(parseFeedbackFeedParams('101', null)).toBeNull();
+    expect(parseFeedbackFeedParams('2.5', null)).toBeNull();
+    expect(parseFeedbackFeedParams('abc', null)).toBeNull();
+  });
+
+  it('rejects invalid cursors', () => {
+    expect(parseFeedbackFeedParams('10', 'garbage')).toBeNull();
   });
 });
