@@ -4,6 +4,6 @@ export default defineProject({
   test: {
     name: 'api',
     environment: 'node',
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/*.test.ts'],
   },
 });

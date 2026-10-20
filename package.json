@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --project shared --project api",
-    "test:watch": "vitest --project shared --project api"
+    "test:watch": "vitest --project shared --project api",
+    "test:integration": "vitest run --project api-integration"
   },
   "license": "MIT",
   "type": "module",
