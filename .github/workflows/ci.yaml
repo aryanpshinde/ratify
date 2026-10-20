@@ -42,3 +42,78 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  integration:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ratify
+          POSTGRES_PASSWORD: ratify
+          POSTGRES_DB: ratify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://ratify:ratify@localhost:5432/ratify
+      BETTER_AUTH_SECRET: ci-integration-secret-not-used-in-production
+      BETTER_AUTH_URL: http://localhost:3000
+      FRONTEND_URL: http://localhost:5173
+      STORAGE_PROVIDER: neon
+      STORAGE_ENDPOINT: http://127.0.0.1:9090
+      STORAGE_BUCKET: ratify-deliverables
+      STORAGE_ACCESS_KEY: s3mock
+      STORAGE_SECRET_KEY: s3mock
+      STORAGE_REGION: us-east-1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @ratify/shared build
+
+      - name: Start S3 mock
+        run: |
+          docker run -d --name ratify-s3mock -p 9090:9090 \
+            -e COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS=ratify-deliverables \
+            -e COM_ADOBE_TESTING_S3MOCK_STORE_REGION=us-east-1 \
+            adobe/s3mock:5.2.3
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:9090/favicon.ico >/dev/null 2>&1; then
+              echo "S3 mock is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "S3 mock did not become ready" >&2
+          docker logs ratify-s3mock
+          exit 1
+
+      - name: Run migrations
+        run: pnpm --filter @ratify/api db:migrate
+
+      - name: Integration tests
+        run: pnpm test:integration
