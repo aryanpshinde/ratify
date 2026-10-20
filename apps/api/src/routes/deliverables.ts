@@ -22,7 +22,7 @@ import {
   isFileTooLarge,
   resolveFileMimeType,
 } from '../lib/file-validation.js';
-import { buildFileKey, deleteObject, uploadObject } from '../lib/storage.js';
+import { buildFileKey, deleteObject, sweepFileKeys, uploadObject } from '../lib/storage.js';
 import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
 
 const deliverableRoutes = new Hono();
@@ -205,7 +205,7 @@ deliverableRoutes.delete('/:id', async (c) => {
 
   await db.delete(deliverables).where(eq(deliverables.id, id));
 
-  await Promise.allSettled(fileKeys.map((key) => deleteObject(key)));
+  await sweepFileKeys(fileKeys);
 
   return c.json({ status: 'ok', data: id });
 });

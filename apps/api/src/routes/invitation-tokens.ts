@@ -127,11 +127,14 @@ invitationTokenRoutes.post('/:token/accept', async (c) => {
       .limit(1);
 
     if (!existing) {
-      await tx.insert(projectMembers).values({
-        projectId: invite.projectId,
-        userId: session.user.id,
-        role: 'client',
-      });
+      await tx
+        .insert(projectMembers)
+        .values({
+          projectId: invite.projectId,
+          userId: session.user.id,
+          role: 'client',
+        })
+        .onConflictDoNothing();
     }
 
     await tx

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -53,6 +54,19 @@ export async function getFileDownloadUrl(key: string, fileName: string): Promise
 
 export async function deleteObject(key: string): Promise<void> {
   await client.send(new DeleteObjectCommand({ Bucket: env.STORAGE_BUCKET, Key: key }));
+}
+
+export async function sweepFileKeys(keys: string[]): Promise<void> {
+  await Promise.allSettled(keys.map((key) => deleteObject(key)));
+}
+
+export async function objectExists(key: string): Promise<boolean> {
+  try {
+    await client.send(new HeadObjectCommand({ Bucket: env.STORAGE_BUCKET, Key: key }));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function buildFileKey(deliverableId: string, fileName: string): string {

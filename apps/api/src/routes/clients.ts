@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { clients } from '../db/schema.js';
+import { clients, projects, deliverables, deliverableVersions } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { getUuidParam } from '../lib/params.js';
+import { sweepFileKeys } from '../lib/storage.js';
 import { createClientSchema, updateClientSchema } from '@ratify/shared';
-import { desc, eq, and, sql } from 'drizzle-orm';
+import { desc, eq, and, sql, isNotNull } from 'drizzle-orm';
 
 const clientRoutes = new Hono();
 
@@ -69,21 +70,33 @@ clientRoutes.post('/', async (c) => {
     return c.json({ status: 'error', message: 'Email already exists' }, 409);
   }
 
-  const [created] = await db
-    .insert(clients)
-    .values({
-      ownerId: session.user.id,
-      name: data.name,
-      email: data.email,
-      company: data.company ?? null,
-    })
-    .returning();
+  let created: (typeof clients.$inferSelect)[] | undefined;
+  try {
+    created = await db
+      .insert(clients)
+      .values({
+        ownerId: session.user.id,
+        name: data.name,
+        email: data.email,
+        company: data.company ?? null,
+      })
+      .returning();
+  } catch (err: unknown) {
+    const code =
+      (err as { code?: unknown }).code ?? (err as { cause?: { code?: unknown } }).cause?.code;
+    if (code === '23505') {
+      return c.json({ status: 'error', message: 'Email already exists' }, 409);
+    }
+    throw err;
+  }
 
-  if (!created) {
+  const inserted = created?.[0];
+
+  if (!inserted) {
     return c.json({ status: 'error', message: 'Failed to create client' }, 500);
   }
 
-  return c.json({ status: 'ok', data: created }, 201);
+  return c.json({ status: 'ok', data: inserted }, 201);
 });
 
 clientRoutes.get('/:id', async (c) => {
@@ -205,7 +218,18 @@ clientRoutes.delete('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Client not found' }, 404);
   }
 
+  const keyRows = await db
+    .select({ fileKey: deliverableVersions.fileKey })
+    .from(deliverableVersions)
+    .innerJoin(deliverables, eq(deliverableVersions.deliverableId, deliverables.id))
+    .innerJoin(projects, eq(deliverables.projectId, projects.id))
+    .where(and(eq(projects.clientId, id), isNotNull(deliverableVersions.fileKey)));
+
+  const fileKeys = keyRows.flatMap((row) => (row.fileKey ? [row.fileKey] : []));
+
   await db.delete(clients).where(eq(clients.id, id));
+
+  await sweepFileKeys(fileKeys);
 
   return c.json({ status: 'ok', data: id });
 });

@@ -1,12 +1,20 @@
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { projects, clients, activityLogs, users } from '../db/schema.js';
+import {
+  projects,
+  clients,
+  activityLogs,
+  users,
+  deliverables,
+  deliverableVersions,
+} from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { requireProjectAccess } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
+import { sweepFileKeys } from '../lib/storage.js';
 import { createProjectSchema, updateProjectSchema } from '@ratify/shared';
-import { desc, eq, and, lt, or } from 'drizzle-orm';
+import { desc, eq, and, lt, or, isNotNull } from 'drizzle-orm';
 import { parseActivityFeedParams, buildActivityCursor } from '../lib/pagination-guards.js';
 
 const projectRoutes = new Hono();
@@ -264,7 +272,17 @@ projectRoutes.delete('/:id', async (c) => {
     return c.json({ status: 'error', message: 'Project not found' }, 404);
   }
 
+  const keyRows = await db
+    .select({ fileKey: deliverableVersions.fileKey })
+    .from(deliverableVersions)
+    .innerJoin(deliverables, eq(deliverableVersions.deliverableId, deliverables.id))
+    .where(and(eq(deliverables.projectId, id), isNotNull(deliverableVersions.fileKey)));
+
+  const fileKeys = keyRows.flatMap((row) => (row.fileKey ? [row.fileKey] : []));
+
   await db.delete(projects).where(eq(projects.id, id));
+
+  await sweepFileKeys(fileKeys);
 
   return c.json({ status: 'ok', data: id });
 });
