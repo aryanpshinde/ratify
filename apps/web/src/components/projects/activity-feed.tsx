@@ -36,6 +36,13 @@ function StatusChangeMetadata({ metadata }: { metadata: Record<string, unknown> 
   );
 }
 
+function NoteMetadata({ metadata }: { metadata: Record<string, unknown> | null }) {
+  if (!metadata) return null;
+  const note = metadata['note'];
+  if (typeof note !== 'string' || note.trim().length === 0) return null;
+  return <p className="mt-1 text-caption text-muted-foreground">“{note}”</p>;
+}
+
 function ActivityFeedSkeleton() {
   return (
     <div className="space-y-4">
@@ -103,6 +110,9 @@ export function ActivityFeed({ projectId }: ActivityFeedProps) {
             </p>
             {item.action === 'project_status_changed' && (
               <StatusChangeMetadata metadata={item.metadata} />
+            )}
+            {(item.action === 'deliverable_approved' || item.action === 'deliverable_rejected') && (
+              <NoteMetadata metadata={item.metadata} />
             )}
             <p className="mt-0.5 font-mono text-caption text-muted-foreground tabular-nums">
               {timeAgo(item.createdAt)}
