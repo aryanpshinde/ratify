@@ -192,7 +192,15 @@ clientRoutes.patch('/:id', async (c) => {
   if (data.email !== undefined) payload['email'] = data.email;
   if (data.company !== undefined) payload['company'] = data.company === '' ? null : data.company;
 
-  const [updated] = await db.update(clients).set(payload).where(eq(clients.id, id)).returning();
+  const [updated] = await db
+    .update(clients)
+    .set(payload)
+    .where(and(eq(clients.id, id), eq(clients.ownerId, session.user.id)))
+    .returning();
+
+  if (!updated) {
+    return c.json({ status: 'error', message: 'Client not found' }, 404);
+  }
 
   return c.json({ status: 'ok', data: updated });
 });
@@ -227,7 +235,7 @@ clientRoutes.delete('/:id', async (c) => {
 
   const fileKeys = keyRows.flatMap((row) => (row.fileKey ? [row.fileKey] : []));
 
-  await db.delete(clients).where(eq(clients.id, id));
+  await db.delete(clients).where(and(eq(clients.id, id), eq(clients.ownerId, session.user.id)));
 
   await sweepFileKeys(fileKeys);
 

@@ -3,7 +3,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { db } from '../db/index.js';
 import { deliverables, deliverableVersions } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
-import { requireProjectAccess } from '../lib/access.js';
+import { requireProjectAccess, userCanManageProject } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
 import {
@@ -160,7 +160,9 @@ deliverableRoutes.patch('/:id', async (c) => {
   const updated = await db
     .update(deliverables)
     .set(payload)
-    .where(eq(deliverables.id, id))
+    .where(
+      and(eq(deliverables.id, id), userCanManageProject(deliverables.projectId, session.user.id)),
+    )
     .returning();
 
   const [row] = updated;
@@ -203,7 +205,11 @@ deliverableRoutes.delete('/:id', async (c) => {
 
   const fileKeys = keyRows.flatMap((row) => (row.fileKey ? [row.fileKey] : []));
 
-  await db.delete(deliverables).where(eq(deliverables.id, id));
+  await db
+    .delete(deliverables)
+    .where(
+      and(eq(deliverables.id, id), userCanManageProject(deliverables.projectId, session.user.id)),
+    );
 
   await sweepFileKeys(fileKeys);
 

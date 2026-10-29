@@ -41,9 +41,13 @@ export function resolveFileMimeType(
 }
 
 export function sanitizeFileName(fileName: string): string {
-  return getFileBasename(fileName)
+  const base = getFileBasename(fileName)
     .replace(/[\p{Cc}"';]+/gu, '')
     .trim();
+  if (base === '.' || base === '..') {
+    return '';
+  }
+  return base;
 }
 
 export function isFileTooLarge(sizeBytes: number): boolean {

@@ -53,6 +53,12 @@ describe('file validation', () => {
     expect(sanitizeFileName('')).toBe('');
   });
 
+  it('rejects dot-only file names', () => {
+    expect(sanitizeFileName('.')).toBe('');
+    expect(sanitizeFileName('..')).toBe('');
+    expect(sanitizeFileName('/path/to/..')).toBe('');
+  });
+
   it('enforces the 10 MB cap boundary', () => {
     expect(isFileTooLarge(MAX_FILE_SIZE_BYTES)).toBe(false);
     expect(isFileTooLarge(MAX_FILE_SIZE_BYTES + 1)).toBe(true);

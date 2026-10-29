@@ -64,6 +64,13 @@
       "when": 1792381208113,
       "tag": "0008_shallow_makkari",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793273396772,
+      "tag": "0009_slimy_ulik",
+      "breakpoints": true
     }
   ]
 }

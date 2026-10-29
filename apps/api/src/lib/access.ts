@@ -1,7 +1,7 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, exists, or, sql, type SQL, type SQLWrapper } from 'drizzle-orm';
 import type { MemberRole } from '@ratify/shared';
 import { projectMembers, projects, clients } from '../db/schema.js';
-import type { DbOrTx } from '../db/index.js';
+import { db, type DbOrTx } from '../db/index.js';
 import { isPortalProjectVisible } from './invitation-guards.js';
 
 export interface ProjectAccess {
@@ -40,6 +40,24 @@ export async function requireProjectAccess(
   }
 
   return { project, isOwner: false, role: membership.role };
+}
+
+export function userCanManageProject(projectIdExpr: SQLWrapper, userId: string): SQL {
+  return or(
+    sql`exists (select 1 from projects p where p.id = ${projectIdExpr} and p.owner_id = ${userId})`,
+    exists(
+      db
+        .select({ one: sql`1` })
+        .from(projectMembers)
+        .where(
+          and(
+            eq(projectMembers.projectId, projectIdExpr),
+            eq(projectMembers.userId, userId),
+            eq(projectMembers.role, 'admin'),
+          ),
+        ),
+    ),
+  )!;
 }
 
 export interface PortalProjectAccess {

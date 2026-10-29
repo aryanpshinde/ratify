@@ -9,7 +9,7 @@ import {
   deliverableVersions,
 } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
-import { requireProjectAccess } from '../lib/access.js';
+import { requireProjectAccess, userCanManageProject } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
 import { sweepFileKeys } from '../lib/storage.js';
@@ -239,7 +239,11 @@ projectRoutes.patch('/:id', async (c) => {
       );
     }
 
-    const [row] = await tx.update(projects).set(payload).where(eq(projects.id, id)).returning();
+    const [row] = await tx
+      .update(projects)
+      .set(payload)
+      .where(and(eq(projects.id, id), userCanManageProject(projects.id, session.user.id)))
+      .returning();
 
     return row;
   });
@@ -280,7 +284,9 @@ projectRoutes.delete('/:id', async (c) => {
 
   const fileKeys = keyRows.flatMap((row) => (row.fileKey ? [row.fileKey] : []));
 
-  await db.delete(projects).where(eq(projects.id, id));
+  await db
+    .delete(projects)
+    .where(and(eq(projects.id, id), userCanManageProject(projects.id, session.user.id)));
 
   await sweepFileKeys(fileKeys);
 
