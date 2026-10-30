@@ -2,6 +2,9 @@
   "name": "ratify",
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
+  "vars": {
+    "RENDER_URL": "https://ratify-api-ltp9.onrender.com",
+  },
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application",
