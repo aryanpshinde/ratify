@@ -26,6 +26,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
+  "include": ["src", "worker"],
   "references": [{ "path": "../../packages/shared" }]
 }

@@ -13,3 +13,6 @@ logs/
 # Vitest reports and artifacts 
 .vitest/
 coverage/
+
+# Wrangler local artifacts
+.wrangler/
