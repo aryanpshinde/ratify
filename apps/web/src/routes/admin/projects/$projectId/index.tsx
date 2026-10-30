@@ -2,13 +2,21 @@ import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowLeft, Banknote, Calendar, UserPlus } from 'lucide-react';
 import { useProject } from '@/hooks/projects/use-project';
+import { useUpdateProject } from '@/hooks/projects/use-update-project';
 import { ActivityFeed } from '@/components/projects/activity-feed';
-import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
 import { ProjectDeliverablesSection } from '@/components/deliverables/project-deliverables-section';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { PROJECT_STATUS_GROUPS } from '@/lib/constants';
 import { formatDeadline } from '@/lib/format';
 import { useInvitations } from '@/hooks/projects/use-invitations';
 import { InviteClientDialog } from '@/components/projects/invite-client-dialog';
@@ -45,6 +53,12 @@ function ProjectDetailPage() {
     isError: invitesError,
   } = useInvitations(projectId);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const updateProject = useUpdateProject();
+
+  const statusOptions = PROJECT_STATUS_GROUPS.map((group) => ({
+    value: group.status,
+    label: group.label,
+  }));
 
   if (isPending) return <ProjectDetailSkeleton />;
 
@@ -78,7 +92,29 @@ function ProjectDetailPage() {
         </Link>
         <div className="flex items-center gap-3">
           <h2 className="text-h1 text-foreground">{project.title}</h2>
-          <ProjectStatusBadge status={project.status} />
+          <Select
+            value={project.status}
+            items={statusOptions}
+            onValueChange={(value) => {
+              if (value === null || value === project.status) return;
+              updateProject.mutate({
+                id: project.id,
+                data: { status: value },
+                successMessage: 'Project status updated',
+              });
+            }}
+          >
+            <SelectTrigger className="w-fit" disabled={updateProject.isPending}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
