@@ -9,13 +9,12 @@ interface DeliverableMutationScope {
 
 export function invalidateDeliverableFeedback(
   queryClient: QueryClient,
-  { deliverableId, projectId }: DeliverableMutationScope,
+  { deliverableId }: DeliverableMutationScope,
 ) {
   queryClient.invalidateQueries({
     queryKey: ['portal', 'deliverables', deliverableId, 'feedback'],
   });
   queryClient.invalidateQueries({ queryKey: ['deliverables', deliverableId, 'feedback'] });
-  queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'activity'] });
 }
 
 export function invalidateDeliverableDecision(

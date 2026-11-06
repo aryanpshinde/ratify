@@ -22,7 +22,6 @@ export function useDeleteDeliverable() {
       queryClient.invalidateQueries({
         queryKey: ['projects', variables.projectId, 'deliverables'],
       });
-      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'activity'] });
       toast.success('Deliverable deleted');
     },
     onError: (error) => {

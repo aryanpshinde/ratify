@@ -31,7 +31,6 @@ export function useCreateFileVersion() {
       queryClient.invalidateQueries({
         queryKey: ['projects', variables.projectId, 'deliverables'],
       });
-      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'activity'] });
       toast.success('File version created');
     },
     onError: (error) => {

@@ -29,7 +29,6 @@ export function useCreateLinkVersion() {
       queryClient.invalidateQueries({
         queryKey: ['projects', variables.projectId, 'deliverables'],
       });
-      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'activity'] });
       toast.success('Link version created');
     },
     onError: (error) => {

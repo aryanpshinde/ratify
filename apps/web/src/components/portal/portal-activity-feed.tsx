@@ -1,25 +1,30 @@
 import { History } from 'lucide-react';
-import type { ProjectStatus } from '@ratify/shared';
-import { useProjectActivity } from '@/hooks/projects/use-project-activity';
+import type { ActivityLogResponse, ProjectStatus } from '@ratify/shared';
+import { usePortalProjectActivity } from '@/hooks/portal/use-portal-project-activity';
 import { timeAgo } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BoundedFeed } from '@/components/paginated/bounded-feed';
-import { ProjectStatusBadge } from './project-status-badge';
+import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
 
 const ACTION_LABELS: Record<string, string> = {
-  project_created: 'created the project',
-  project_status_changed: 'changed project status',
-  client_invited: 'invited a client',
-  deliverable_created: 'created a deliverable',
+  project_status_changed: 'updated the project status',
+  deliverable_created: 'added a deliverable',
   version_uploaded: 'uploaded a new version',
-  deliverable_submitted: 'submitted for review',
+  deliverable_submitted: 'sent a deliverable for your review',
   feedback_created: 'left feedback',
-  deliverable_approved: 'approved the deliverable',
-  deliverable_rejected: 'rejected the deliverable',
 };
 
-function getActionLabel(action: string): string {
+function getActionLabel(action: string, metadata: Record<string, unknown> | null): string {
+  const versionNumber = metadata?.['version_number'];
+  if (action === 'version_uploaded' && typeof versionNumber === 'number') {
+    return `uploaded version ${versionNumber}`;
+  }
   return ACTION_LABELS[action] ?? action.replace(/_/g, ' ');
+}
+
+function getActorName(item: Pick<ActivityLogResponse, 'actorId' | 'actorName' | 'metadata'>) {
+  if (item.metadata?.['author_role'] === 'client') return 'You';
+  return item.actorName ?? 'Someone';
 }
 
 function StatusChangeMetadata({ metadata }: { metadata: Record<string, unknown> | null }) {
@@ -36,14 +41,7 @@ function StatusChangeMetadata({ metadata }: { metadata: Record<string, unknown> 
   );
 }
 
-function NoteMetadata({ metadata }: { metadata: Record<string, unknown> | null }) {
-  if (!metadata) return null;
-  const note = metadata['note'];
-  if (typeof note !== 'string' || note.trim().length === 0) return null;
-  return <p className="mt-1 text-caption text-muted-foreground">“{note}”</p>;
-}
-
-function ActivityFeedSkeleton() {
+function PortalActivityFeedSkeleton() {
   return (
     <div className="space-y-4">
       {[1, 2, 3, 4].map((i) => (
@@ -59,37 +57,37 @@ function ActivityFeedSkeleton() {
   );
 }
 
-function ActivityFeedEmpty() {
+function PortalActivityFeedEmpty() {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
       <History size={32} strokeWidth={1.5} aria-hidden="true" className="text-muted-foreground" />
-      <p className="mt-3 text-body font-medium text-foreground">No activity yet</p>
+      <p className="mt-3 text-body font-medium text-foreground">No updates yet</p>
       <p className="mt-1 max-w-xs text-caption text-muted-foreground">
-        Project events will appear here as you create deliverables and invite clients.
+        Updates will appear here as the team works on this project.
       </p>
     </div>
   );
 }
 
-interface ActivityFeedProps {
+interface PortalActivityFeedProps {
   projectId: string;
 }
 
-export function ActivityFeed({ projectId }: ActivityFeedProps) {
+export function PortalActivityFeed({ projectId }: PortalActivityFeedProps) {
   const { data, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useProjectActivity(projectId);
+    usePortalProjectActivity(projectId);
 
-  if (isPending) return <ActivityFeedSkeleton />;
-  if (isError) return <p className="text-body text-error">Failed to load activity.</p>;
+  if (isPending) return <PortalActivityFeedSkeleton />;
+  if (isError) return <p className="text-body text-error">Failed to load updates.</p>;
 
   const activities = data?.pages.flatMap((page) => page.items) ?? [];
-  if (activities.length === 0) return <ActivityFeedEmpty />;
+  if (activities.length === 0) return <PortalActivityFeedEmpty />;
 
   return (
     <BoundedFeed
-      label="Project activity timeline"
-      loadMoreLabel="Load older activity"
-      endLabel="End of activity"
+      label="Project updates timeline"
+      loadMoreLabel="Load older updates"
+      endLabel="End of updates"
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
       fetchNextPage={fetchNextPage}
@@ -105,14 +103,13 @@ export function ActivityFeed({ projectId }: ActivityFeedProps) {
           <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden="true" />
           <div className="min-w-0">
             <p className="text-body text-foreground">
-              <span className="font-medium">{item.actorName ?? 'Someone'}</span>{' '}
-              <span className="text-muted-foreground">{getActionLabel(item.action)}</span>
+              <span className="font-medium">{getActorName(item)}</span>{' '}
+              <span className="text-muted-foreground">
+                {getActionLabel(item.action, item.metadata)}
+              </span>
             </p>
             {item.action === 'project_status_changed' && (
               <StatusChangeMetadata metadata={item.metadata} />
-            )}
-            {(item.action === 'deliverable_approved' || item.action === 'deliverable_rejected') && (
-              <NoteMetadata metadata={item.metadata} />
             )}
             <p className="mt-0.5 font-mono text-caption text-muted-foreground tabular-nums">
               {timeAgo(item.createdAt)}

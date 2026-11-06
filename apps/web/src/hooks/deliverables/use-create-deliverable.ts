@@ -27,7 +27,6 @@ export function useCreateDeliverable() {
       queryClient.invalidateQueries({
         queryKey: ['projects', variables.projectId, 'deliverables'],
       });
-      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'activity'] });
       toast.success('Deliverable created');
     },
     onError: (error) => {

@@ -1,13 +1,22 @@
 import { useState } from 'react';
-import { Link, Check } from 'lucide-react';
+import { Link, Check, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import type { InvitationResponse } from '@ratify/shared';
 import { formatDate } from '@/lib/format';
+import { useRevokeInvitation } from '@/hooks/projects/use-revoke-invitation';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import type { VariantProps } from 'class-variance-authority';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>;
 
@@ -84,13 +93,17 @@ interface PendingInvitationsListProps {
   invitations: InvitationResponse[] | undefined;
   isPending: boolean;
   isError: boolean;
+  projectId: string;
 }
 
 export function PendingInvitationsList({
   invitations,
   isPending,
   isError,
+  projectId,
 }: PendingInvitationsListProps) {
+  const [revokeTarget, setRevokeTarget] = useState<InvitationResponse | null>(null);
+  const revokeInvitation = useRevokeInvitation();
   if (isPending) return <InvitationsSkeleton />;
 
   if (isError) {
@@ -125,10 +138,70 @@ export function PendingInvitationsList({
             <div className="flex shrink-0 items-center gap-2">
               <Badge variant={status.variant}>{status.label}</Badge>
               <CopyLinkButton token={invitation.token} />
+              {status.label === 'Pending' && (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setRevokeTarget(invitation)}
+                        aria-label="Revoke invitation"
+                        className="text-muted-foreground hover:text-error"
+                      />
+                    }
+                  >
+                    <Ban />
+                  </TooltipTrigger>
+                  <TooltipContent>Revoke invitation</TooltipContent>
+                </Tooltip>
+              )}
             </div>
           </div>
         );
       })}
+      {revokeTarget && (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open && !revokeInvitation.isPending) setRevokeTarget(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-h2">Revoke invitation</DialogTitle>
+              <DialogDescription>
+                The link sent to{' '}
+                <span className="font-mono break-all text-foreground">{revokeTarget.email}</span>{' '}
+                will stop working immediately. You can send a new invitation anytime.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRevokeTarget(null)}
+                disabled={revokeInvitation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={revokeInvitation.isPending}
+                onClick={() =>
+                  revokeInvitation.mutate(
+                    { projectId, invitationId: revokeTarget.id },
+                    { onSuccess: () => setRevokeTarget(null) },
+                  )
+                }
+              >
+                {revokeInvitation.isPending ? 'Revoking...' : 'Revoke invitation'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowLeft, Banknote, Calendar, UserPlus } from 'lucide-react';
 import { useProject } from '@/hooks/projects/use-project';
 import { useUpdateProject } from '@/hooks/projects/use-update-project';
-import { ActivityFeed } from '@/components/projects/activity-feed';
 import { ProjectDeliverablesSection } from '@/components/deliverables/project-deliverables-section';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -162,15 +161,6 @@ function ProjectDetailPage() {
           )}
 
           <ProjectDeliverablesSection projectId={projectId} projectTitle={project.title} />
-
-          <Card className="noise-overlay">
-            <CardHeader>
-              <CardTitle className="text-h3">Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ActivityFeed projectId={projectId} />
-            </CardContent>
-          </Card>
         </div>
 
         <div className="space-y-4">
@@ -228,6 +218,7 @@ function ProjectDetailPage() {
             invitations={invitations}
             isPending={invitesPending}
             isError={invitesError}
+            projectId={projectId}
           />
         </CardContent>
       </Card>

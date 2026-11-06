@@ -21,6 +21,9 @@ export function useCreatePortalFeedback() {
       }),
     onSuccess: (_result, variables) => {
       invalidateDeliverableFeedback(queryClient, variables);
+      queryClient.invalidateQueries({
+        queryKey: ['portal', 'projects', variables.projectId, 'activity'],
+      });
       toast.success('Feedback posted');
     },
     onError: (error) =>

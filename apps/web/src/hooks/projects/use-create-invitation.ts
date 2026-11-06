@@ -25,7 +25,6 @@ export function useCreateInvitation() {
     mutationFn: createInvitation,
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'invitations'] });
-      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'activity'] });
       toast.success('Invitation created');
     },
     onError: (error) => {

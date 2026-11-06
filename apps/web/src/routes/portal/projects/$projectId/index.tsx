@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { usePortalProject } from '@/hooks/portal/use-portal-project';
 import { usePortalDeliverables } from '@/hooks/portal/use-portal-deliverables';
 import { PortalDeliverableCard } from '@/components/portal/portal-deliverable-card';
+import { PortalActivityFeed } from '@/components/portal/portal-activity-feed';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PortalDeliverablesEmptyState } from '@/components/portal/portal-deliverables-empty-state';
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
 import {
@@ -168,6 +170,15 @@ function PortalProjectPage() {
           </div>
         )}
       </section>
+
+      <Card className="noise-overlay">
+        <CardHeader>
+          <CardTitle className="text-h3">Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PortalActivityFeed projectId={projectId} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
