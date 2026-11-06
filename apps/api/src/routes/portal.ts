@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { db } from '../db/index.js';
-import { deliverables, deliverableVersions } from '../db/schema.js';
+import { activityLogs, deliverables, deliverableVersions, users } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { getUuidParam } from '../lib/params.js';
 import { requirePortalProjectAccess } from '../lib/access.js';
@@ -15,11 +15,13 @@ import {
   approveDeliverableSchema,
   canDecideDeliverable,
   isPortalDeliverableVisible,
+  PORTAL_ACTIVITY_ACTIONS,
   rejectDeliverableSchema,
 } from '@ratify/shared';
 import { registerFeedbackRoutes } from '../lib/feedback-routes.js';
 import { logActivity } from '../lib/activity.js';
-import { and, desc, eq, inArray, ne } from 'drizzle-orm';
+import { parseActivityFeedParams, buildActivityCursor } from '../lib/pagination-guards.js';
+import { and, desc, eq, inArray, lt, ne, or } from 'drizzle-orm';
 import { clients, projectMembers, projects } from '../db/schema.js';
 
 const portalRoutes = new Hono();
@@ -120,6 +122,70 @@ portalRoutes.get('/projects/:projectId/deliverables', async (c) => {
     : [];
 
   return c.json({ status: 'ok', data: assembleDeliverableList(rows, versions) });
+});
+
+portalRoutes.get('/projects/:projectId/activity', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const projectId = getUuidParam(c, 'projectId');
+  if (!projectId) {
+    return c.json({ status: 'error', message: 'Invalid projectId' }, 400);
+  }
+
+  const access = await requirePortalProjectAccess(db, projectId, session.user.id);
+  if (!access) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
+  const params = parseActivityFeedParams(c.req.query('limit'), c.req.query('cursor'));
+  if (!params) {
+    return c.json({ status: 'error', message: 'Invalid pagination params' }, 400);
+  }
+
+  const portalActions = [...PORTAL_ACTIVITY_ACTIONS];
+  let whereClause = and(
+    eq(activityLogs.projectId, projectId),
+    inArray(activityLogs.action, portalActions),
+  );
+  if (params.cursor) {
+    whereClause = and(
+      whereClause,
+      or(
+        lt(activityLogs.createdAt, new Date(params.cursor.t)),
+        and(
+          eq(activityLogs.createdAt, new Date(params.cursor.t)),
+          lt(activityLogs.id, params.cursor.i),
+        ),
+      ),
+    )!;
+  }
+
+  const rows = await db
+    .select({
+      id: activityLogs.id,
+      projectId: activityLogs.projectId,
+      actorId: activityLogs.actorId,
+      actorName: users.name,
+      action: activityLogs.action,
+      targetType: activityLogs.targetType,
+      targetId: activityLogs.targetId,
+      metadata: activityLogs.metadata,
+      createdAt: activityLogs.createdAt,
+    })
+    .from(activityLogs)
+    .leftJoin(users, eq(activityLogs.actorId, users.id))
+    .where(whereClause)
+    .orderBy(desc(activityLogs.createdAt), desc(activityLogs.id))
+    .limit(params.limit);
+
+  const last = rows[rows.length - 1] ?? null;
+  const nextCursor =
+    rows.length === params.limit && last ? buildActivityCursor(last.createdAt, last.id) : null;
+
+  return c.json({ status: 'ok', data: { items: rows, nextCursor } });
 });
 
 async function findPortalDeliverable(deliverableId: string, userId: string) {

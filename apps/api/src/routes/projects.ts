@@ -1,21 +1,13 @@
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import {
-  projects,
-  clients,
-  activityLogs,
-  users,
-  deliverables,
-  deliverableVersions,
-} from '../db/schema.js';
+import { projects, clients, deliverables, deliverableVersions } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { requireProjectAccess, userCanManageProject } from '../lib/access.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
 import { sweepFileKeys } from '../lib/storage.js';
 import { createProjectSchema, updateProjectSchema } from '@ratify/shared';
-import { desc, eq, and, lt, or, isNotNull } from 'drizzle-orm';
-import { parseActivityFeedParams, buildActivityCursor } from '../lib/pagination-guards.js';
+import { desc, eq, and, isNotNull } from 'drizzle-orm';
 
 const projectRoutes = new Hono();
 
@@ -291,66 +283,6 @@ projectRoutes.delete('/:id', async (c) => {
   await sweepFileKeys(fileKeys);
 
   return c.json({ status: 'ok', data: id });
-});
-
-projectRoutes.get('/:id/activity', async (c) => {
-  const session = await getSession(c);
-  if (!session) {
-    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
-  }
-
-  const id = getUuidParam(c, 'id');
-  if (!id) {
-    return c.json({ status: 'error', message: 'Invalid id' }, 400);
-  }
-
-  const access = await requireProjectAccess(db, id, session.user.id);
-  if (!access) {
-    return c.json({ status: 'error', message: 'Project not found' }, 404);
-  }
-
-  const params = parseActivityFeedParams(c.req.query('limit'), c.req.query('cursor'));
-  if (!params) {
-    return c.json({ status: 'error', message: 'Invalid pagination params' }, 400);
-  }
-
-  let whereClause = eq(activityLogs.projectId, id);
-  if (params.cursor) {
-    whereClause = and(
-      whereClause,
-      or(
-        lt(activityLogs.createdAt, new Date(params.cursor.t)),
-        and(
-          eq(activityLogs.createdAt, new Date(params.cursor.t)),
-          lt(activityLogs.id, params.cursor.i),
-        ),
-      ),
-    )!;
-  }
-
-  const rows = await db
-    .select({
-      id: activityLogs.id,
-      projectId: activityLogs.projectId,
-      actorId: activityLogs.actorId,
-      actorName: users.name,
-      action: activityLogs.action,
-      targetType: activityLogs.targetType,
-      targetId: activityLogs.targetId,
-      metadata: activityLogs.metadata,
-      createdAt: activityLogs.createdAt,
-    })
-    .from(activityLogs)
-    .leftJoin(users, eq(activityLogs.actorId, users.id))
-    .where(whereClause)
-    .orderBy(desc(activityLogs.createdAt), desc(activityLogs.id))
-    .limit(params.limit);
-
-  const last = rows[rows.length - 1] ?? null;
-  const nextCursor =
-    rows.length === params.limit && last ? buildActivityCursor(last.createdAt, last.id) : null;
-
-  return c.json({ status: 'ok', data: { items: rows, nextCursor } });
 });
 
 export default projectRoutes;

@@ -5,7 +5,12 @@ import { projects, clients, invitations } from '../db/schema.js';
 import { getSession } from '../lib/session.js';
 import { getUuidParam } from '../lib/params.js';
 import { logActivity } from '../lib/activity.js';
-import { emailsMatch, findActiveInvite, isInviteExpired } from '../lib/invitation-guards.js';
+import {
+  emailsMatch,
+  findActiveInvite,
+  isInviteActive,
+  isInviteExpired,
+} from '../lib/invitation-guards.js';
 import { createInvitationSchema } from '@ratify/shared';
 import { desc, eq, and, sql } from 'drizzle-orm';
 
@@ -39,6 +44,71 @@ invitationRoutes.get('/:projectId/invitations', async (c) => {
     .orderBy(desc(invitations.createdAt));
 
   return c.json({ status: 'ok', data: rows });
+});
+
+invitationRoutes.delete('/:projectId/invitations/:invitationId', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json({ status: 'error', message: 'Unauthorized' }, 401);
+  }
+
+  const projectId = getUuidParam(c, 'projectId');
+  const invitationId = getUuidParam(c, 'invitationId');
+  if (!projectId || !invitationId) {
+    return c.json({ status: 'error', message: 'Invalid id' }, 400);
+  }
+
+  const [project] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, session.user.id)))
+    .limit(1);
+
+  if (!project) {
+    return c.json({ status: 'error', message: 'Project not found' }, 404);
+  }
+
+  const [invitation] = await db
+    .select()
+    .from(invitations)
+    .where(and(eq(invitations.id, invitationId), eq(invitations.projectId, projectId)))
+    .limit(1);
+
+  if (!invitation) {
+    return c.json({ status: 'error', message: 'Invitation not found' }, 404);
+  }
+
+  if (invitation.acceptedAt !== null) {
+    return c.json({ status: 'error', message: 'Invitation already accepted' }, 409);
+  }
+
+  if (invitation.revokedAt !== null) {
+    return c.json({ status: 'error', message: 'Invitation already revoked' }, 409);
+  }
+
+  if (!isInviteActive(invitation)) {
+    return c.json({ status: 'error', message: 'Invitation already expired' }, 409);
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(invitations)
+      .set({ revokedAt: new Date() })
+      .where(eq(invitations.id, invitationId));
+
+    await logActivity(
+      {
+        projectId,
+        actorId: session.user.id,
+        action: 'invitation_revoked',
+        targetType: 'invitation',
+        targetId: invitationId,
+      },
+      tx,
+    );
+  });
+
+  return c.json({ status: 'ok', data: invitationId });
 });
 
 invitationRoutes.post('/:projectId/invitations', async (c) => {

@@ -27,6 +27,16 @@ export const activityLogResponseSchema = z.object({
 export type ActivityAction = z.infer<typeof activityActionSchema>;
 export type ActivityLogResponse = z.infer<typeof activityLogResponseSchema>;
 
+export const PORTAL_ACTIVITY_ACTIONS = [
+  'project_status_changed',
+  'deliverable_created',
+  'version_uploaded',
+  'deliverable_submitted',
+  'feedback_created',
+] as const satisfies ReadonlyArray<ActivityAction>;
+
+export type PortalActivityAction = (typeof PORTAL_ACTIVITY_ACTIONS)[number];
+
 export const ACTIVITY_PAGE_SIZE_DEFAULT = 10;
 export const ACTIVITY_PAGE_SIZE_MAX = 100;
 
