@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
           <div key={i} className="rounded-lg border border-border bg-card p-5 shadow-sm">
@@ -30,7 +30,7 @@ export function DashboardSkeleton() {
       </div>
       <div className="space-y-3">
         <Skeleton className="h-7 w-32" />
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="rounded-lg border border-border bg-card p-5 shadow-sm">
               <Skeleton className="h-5 w-40" />

@@ -54,24 +54,26 @@ export function DeliverableVersionsList({
       {versions.map((version) => (
         <div
           key={version.id}
-          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-sm"
+          className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3"
         >
           <div className="min-w-0">
             <p className="font-mono text-body font-medium text-foreground tabular-nums">
               v{version.versionNumber}
             </p>
-            <div className="flex items-center gap-3 font-mono text-caption text-muted-foreground">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono text-caption text-muted-foreground">
               <span className="tabular-nums">{formatDate(version.createdAt)}</span>
-              {version.externalUrl && <span className="truncate">{version.externalUrl}</span>}
+              {version.externalUrl && (
+                <span className="max-w-56 truncate sm:max-w-80">{version.externalUrl}</span>
+              )}
               {version.fileName && (
-                <span>
+                <span className="line-clamp-2 max-w-56 break-all sm:max-w-80">
                   {version.fileName}
                   {version.fileSize !== null ? ` · ${formatBytes(version.fileSize)}` : ''}
                 </span>
               )}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border-subtle pt-2 sm:border-0 sm:pt-0">
             {version.externalUrl && (
               <a
                 href={version.externalUrl}

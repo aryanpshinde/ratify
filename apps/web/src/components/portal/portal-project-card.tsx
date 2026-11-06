@@ -11,11 +11,15 @@ interface PortalProjectCardProps {
 
 export function PortalProjectCard({ project }: PortalProjectCardProps) {
   return (
-    <Link to="/portal/projects/$projectId" params={{ projectId: project.id }} className="block">
+    <Link
+      to="/portal/projects/$projectId"
+      params={{ projectId: project.id }}
+      className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+    >
       <Card className="noise-overlay">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-h3">{project.title}</CardTitle>
+            <CardTitle className="break-words text-h3">{project.title}</CardTitle>
             <ProjectStatusBadge status={project.status} />
           </div>
           <p className="text-caption text-muted-foreground">
@@ -25,7 +29,7 @@ export function PortalProjectCard({ project }: PortalProjectCardProps) {
         </CardHeader>
         {(project.deadline || project.budgetDisplay) && (
           <CardContent>
-            <div className=" flex flex-wrap items-center gap-4 text-caption text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 text-caption text-muted-foreground">
               {project.deadline && (
                 <span className="inline-flex items-center gap-1.5 font-mono">
                   <Calendar size={16} strokeWidth={1.5} aria-hidden="true" />

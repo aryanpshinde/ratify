@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Pencil, Trash2, Link as LinkIcon, Upload, Send } from 'lucide-react';
 import { useDeliverable } from '@/hooks/deliverables/use-deliverable';
+import { useProject } from '@/hooks/projects/use-project';
 import { useDownloadVersion } from '@/hooks/deliverables/use-download-version';
 import { useSubmitDeliverable } from '@/hooks/deliverables/use-submit-deliverable';
 import { useDeliverableFeedback } from '@/hooks/deliverables/use-deliverable-feedback';
@@ -18,6 +19,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn, linkFocusRing } from '@/lib/utils';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import type { DeliverableVersionResponse } from '@ratify/shared';
 
 function EmptyFeedbackNote({ reviewInProgress }: { reviewInProgress: boolean }) {
@@ -46,9 +56,10 @@ function DeliverableDetailSkeleton() {
 }
 
 function DeliverableDetailPage() {
-  const { deliverableId } = Route.useParams();
+  const { deliverableId, projectId } = Route.useParams();
   const navigate = useNavigate();
   const { data: deliverable, isPending, isError } = useDeliverable(deliverableId);
+  const { data: project } = useProject(projectId);
   const downloadVersion = useDownloadVersion();
   const submitDeliverable = useSubmitDeliverable();
   const feedback = useDeliverableFeedback(deliverableId);
@@ -83,8 +94,37 @@ function DeliverableDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link to="/admin/projects/$projectId" params={{ projectId: backProjectId }}>
+      <Breadcrumb className="hidden lg:block">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<Link to="/admin" />}
+              className={cn('max-w-48 truncate', linkFocusRing)}
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<Link to="/admin/projects/$projectId" params={{ projectId }} />}
+              className={cn('max-w-48 truncate', linkFocusRing)}
+            >
+              {project?.title ?? 'Project'}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{deliverable.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Link
+          to="/admin/projects/$projectId"
+          params={{ projectId: backProjectId }}
+          className="shrink-0"
+        >
           <Tooltip>
             <TooltipTrigger
               render={
@@ -96,10 +136,12 @@ function DeliverableDetailPage() {
             <TooltipContent>Back to project</TooltipContent>
           </Tooltip>
         </Link>
-        <h2 className="text-h1 text-foreground">{deliverable.title}</h2>
+        <h2 className="min-w-0 flex-1 basis-48 break-words text-h1 text-foreground">
+          {deliverable.title}
+        </h2>
         <DeliverableStatusBadge status={deliverable.status} />
         {!locked && (
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
             <Button
               size="sm"
               variant="outline"
@@ -162,9 +204,9 @@ function DeliverableDetailPage() {
 
       <Card className="noise-overlay">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-h3">Version History</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
               <Button size="sm" onClick={() => setFileOpen(true)} disabled={locked}>
                 <Upload />
                 Upload File

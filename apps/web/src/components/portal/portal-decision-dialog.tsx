@@ -29,7 +29,6 @@ export function DecisionDialog({
   onConfirm,
 }: DecisionDialogProps) {
   const [note, setNote] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,7 +60,6 @@ export function DecisionDialog({
             rows={3}
             onChange={(event) => setNote(event.target.value)}
           />
-          {error && <p className="text-caption text-error">{error}</p>}
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -73,7 +71,6 @@ export function DecisionDialog({
             disabled={isPending}
             onClick={() => {
               const trimmed = note.trim();
-              setError(null);
               onConfirm(trimmed.length > 0 ? { note: trimmed } : {}, (ok) => {
                 if (ok) {
                   onOpenChange(false);

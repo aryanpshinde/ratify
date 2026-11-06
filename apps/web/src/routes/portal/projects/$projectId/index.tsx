@@ -7,10 +7,19 @@ import { usePortalDeliverables } from '@/hooks/portal/use-portal-deliverables';
 import { PortalDeliverableCard } from '@/components/portal/portal-deliverable-card';
 import { PortalDeliverablesEmptyState } from '@/components/portal/portal-deliverables-empty-state';
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
-import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { PortalGridSkeleton } from '@/components/portal/portal-grid-skeleton';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDeadline } from '@/lib/format';
+import { cn, linkFocusRing } from '@/lib/utils';
 
 export const Route = createFileRoute('/portal/projects/$projectId/')({
   component: PortalProjectPage,
@@ -54,7 +63,7 @@ function PortalProjectPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliverablesError]);
 
-  if (isPending) return <DashboardSkeleton />;
+  if (isPending) return <PortalGridSkeleton />;
 
   if (isError || !project) {
     return (
@@ -62,7 +71,7 @@ function PortalProjectPage() {
         <p className="text-body text-muted-foreground">
           This project is not available in your portal.
         </p>
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
           <Button variant="outline" onClick={() => navigate({ to: '/portal' })}>
             Back to projects
           </Button>
@@ -75,9 +84,25 @@ function PortalProjectPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <Link to="/portal">
+    <div className="space-y-6">
+      <Breadcrumb className="hidden lg:block">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<Link to="/portal" />}
+              className={cn('max-w-48 truncate', linkFocusRing)}
+            >
+              Your projects
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{project.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Link to="/portal" className="shrink-0">
           <Tooltip>
             <TooltipTrigger
               render={
@@ -89,7 +114,9 @@ function PortalProjectPage() {
             <TooltipContent>Back to projects</TooltipContent>
           </Tooltip>
         </Link>
-        <h2 className="text-h1 text-foreground">{project.title}</h2>
+        <h2 className="min-w-0 flex-1 basis-48 break-words text-h1 text-foreground">
+          {project.title}
+        </h2>
         <ProjectStatusBadge status={project.status} />
       </div>
 
@@ -116,9 +143,9 @@ function PortalProjectPage() {
 
       <section className="space-y-4">
         <h3 className="text-h2 text-foreground">Deliverables</h3>
-        {deliverablesPending && <DashboardSkeleton />}
+        {deliverablesPending && <PortalGridSkeleton />}
         {deliverablesError && !deliverablesPending && (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12 text-center shadow-sm noise-overlay">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-6 text-center shadow-sm noise-overlay sm:p-12">
             <p className="text-body text-muted-foreground">Could not load deliverables</p>
             <Button
               className="mt-4"

@@ -83,7 +83,7 @@ export function FeedbackThreads({
     createdAt: string,
     versionNumber?: number,
   ) => (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
       <span className="text-caption font-medium text-foreground">{name ?? 'Former member'}</span>
       {role === 'admin' && <Badge variant="secondary">Admin</Badge>}
       {versionNumber !== undefined && (
@@ -137,14 +137,16 @@ export function FeedbackThreads({
                   </div>
                 )}
               </div>
-              <p className="mt-1 text-body text-foreground">{thread.body}</p>
+              <p className="mt-1 break-words text-body text-foreground">{thread.body}</p>
 
               {thread.replies.length > 0 && (
                 <div className="mt-3 space-y-3 border-l-2 border-border-subtle pl-4">
                   {thread.replies.map((reply: FeedbackReplyResponse) => (
                     <div key={reply.id}>
                       {renderMeta(reply.author.name, reply.author.role, reply.createdAt)}
-                      <p className="mt-0.5 text-body-sm text-foreground">{reply.body}</p>
+                      <p className="mt-0.5 break-words text-body-sm text-foreground">
+                        {reply.body}
+                      </p>
                     </div>
                   ))}
                 </div>

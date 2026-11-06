@@ -30,7 +30,7 @@ export function ProjectCard({ project, onToggleArchive, onDelete }: ProjectCardP
             <Link
               to="/admin/projects/$projectId"
               params={{ projectId: project.id }}
-              className="transition-colors hover:text-accent"
+              className="break-words rounded-md transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               {project.title}
             </Link>

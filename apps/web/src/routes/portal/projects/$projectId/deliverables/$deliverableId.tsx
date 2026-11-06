@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { canReceiveFeedback } from '@ratify/shared';
 import { usePortalDeliverable } from '@/hooks/portal/use-portal-deliverable';
+import { usePortalProject } from '@/hooks/portal/use-portal-project';
 import { usePortalDownloadVersion } from '@/hooks/portal/use-portal-version-download';
 import { usePortalFeedback } from '@/hooks/portal/use-portal-feedback';
 import { useCreatePortalFeedback } from '@/hooks/portal/use-create-portal-feedback';
@@ -16,6 +17,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn, linkFocusRing } from '@/lib/utils';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import type { DeliverableVersionResponse } from '@ratify/shared';
 
 export const Route = createFileRoute('/portal/projects/$projectId/deliverables/$deliverableId')({
@@ -36,6 +46,7 @@ function PortalDeliverableDetailPage() {
   const { deliverableId, projectId } = Route.useParams();
   const navigate = useNavigate();
   const { data: deliverable, isPending, isError } = usePortalDeliverable(deliverableId);
+  const { data: project } = usePortalProject(projectId);
   const downloadVersion = usePortalDownloadVersion();
   const feedback = usePortalFeedback(deliverableId);
   const createFeedback = useCreatePortalFeedback();
@@ -71,8 +82,37 @@ function PortalDeliverableDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link to="/portal/projects/$projectId" params={{ projectId: projectId }}>
+      <Breadcrumb className="hidden lg:block">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<Link to="/portal" />}
+              className={cn('max-w-48 truncate', linkFocusRing)}
+            >
+              Your projects
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<Link to="/portal/projects/$projectId" params={{ projectId }} />}
+              className={cn('max-w-48 truncate', linkFocusRing)}
+            >
+              {project?.title ?? 'Project'}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{deliverable.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Link
+          to="/portal/projects/$projectId"
+          params={{ projectId: projectId }}
+          className="shrink-0"
+        >
           <Tooltip>
             <TooltipTrigger
               render={
@@ -84,7 +124,9 @@ function PortalDeliverableDetailPage() {
             <TooltipContent>Back to project</TooltipContent>
           </Tooltip>
         </Link>
-        <h2 className="text-h1 text-foreground">{deliverable.title}</h2>
+        <h2 className="min-w-0 flex-1 basis-48 break-words text-h1 text-foreground">
+          {deliverable.title}
+        </h2>
         <DeliverableStatusBadge status={deliverable.status} />
       </div>
 
@@ -153,7 +195,7 @@ function PortalDeliverableDetailPage() {
             }
           >
             {reviewInProgress && (
-              <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
+              <div className="flex flex-wrap justify-end gap-2 border-t border-border-subtle pt-4">
                 <Button
                   variant="outline"
                   disabled={rejectDeliverable.isPending}

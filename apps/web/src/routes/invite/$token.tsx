@@ -35,7 +35,7 @@ function InvitePage() {
   };
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center p-6">
+    <main className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6">
       <Card className="w-full max-w-md noise-overlay">
         {isPending || sessionPending ? (
           <CardContent className="p-6">
@@ -61,8 +61,13 @@ function InvitePage() {
               </div>
               <div>
                 <p className="text-caption text-muted-foreground">Invited email</p>
-                <p className="flex items-center gap-1.5 font-mono text-body-sm text-foreground">
-                  <Mail size={14} strokeWidth={1.5} aria-hidden="true" />
+                <p className="flex items-start gap-1.5 font-mono text-body-sm break-all text-foreground">
+                  <Mail
+                    size={14}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0"
+                  />
                   {invitation.email}
                 </p>
               </div>
@@ -79,9 +84,9 @@ function InvitePage() {
                   <p className="text-body-sm font-medium text-error">Wrong account</p>
                   <p className="text-caption text-muted-foreground">
                     This invitation was sent to{' '}
-                    <span className="font-mono text-foreground">{invitation.email}</span>, but you
-                    are signed in as{' '}
-                    <span className="font-mono text-foreground">{sessionEmail}</span>.
+                    <span className="font-mono break-all text-foreground">{invitation.email}</span>,
+                    but you are signed in as{' '}
+                    <span className="font-mono break-all text-foreground">{sessionEmail}</span>.
                   </p>
                   <Button variant="outline" className="w-full" onClick={() => signOut()}>
                     Sign in with a different account

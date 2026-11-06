@@ -46,7 +46,7 @@ export function ProjectDeliverablesSection({
   return (
     <Card className="noise-overlay">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-h3">Deliverables</CardTitle>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             New Deliverable
@@ -64,54 +64,62 @@ export function ProjectDeliverablesSection({
           </p>
         ) : (
           <div className="space-y-3">
-            {deliverables.map((deliverable) => (
-              <div
-                key={deliverable.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-muted/50"
-              >
-                <Link
-                  to="/admin/projects/$projectId/deliverables/$deliverableId"
-                  params={{ projectId, deliverableId: deliverable.id }}
-                  className="min-w-0 flex-1"
+            {deliverables.map((deliverable) => {
+              const meta = `${
+                deliverable.latestVersion ? `v${deliverable.latestVersion.versionNumber} · ` : ''
+              }${
+                deliverable.versionCount === 1
+                  ? '1 version'
+                  : `${deliverable.versionCount} versions`
+              } · Updated ${formatDate(deliverable.updatedAt)}`;
+              return (
+                <div
+                  key={deliverable.id}
+                  className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                 >
-                  <p className="truncate text-body font-medium text-foreground">
-                    {deliverable.title}
-                  </p>
-                  <p className="text-caption text-muted-foreground tabular-nums">
-                    {deliverable.latestVersion
-                      ? `v${deliverable.latestVersion.versionNumber} · `
-                      : ''}
-                    {deliverable.versionCount === 1
-                      ? '1 version'
-                      : `${deliverable.versionCount} versions`}
-                    {' · '}
-                    Updated {formatDate(deliverable.updatedAt)}
-                  </p>
-                </Link>
-                <div className="flex shrink-0 items-center gap-2">
-                  <DeliverableStatusBadge status={deliverable.status} />
-                  {deliverable.status !== 'approved' && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setLinkTarget(deliverable)}
-                    >
-                      Add Link
-                    </Button>
-                  )}
                   <Link
                     to="/admin/projects/$projectId/deliverables/$deliverableId"
                     params={{ projectId, deliverableId: deliverable.id }}
-                    aria-label={`Open ${deliverable.title}`}
+                    className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   >
-                    <Button variant="ghost" size="icon-sm" aria-hidden="true" tabIndex={-1}>
-                      <ChevronRight />
-                    </Button>
+                    <p className="truncate text-body font-medium text-foreground">
+                      {deliverable.title}
+                    </p>
+                    <p
+                      className="truncate text-caption text-muted-foreground tabular-nums"
+                      title={meta}
+                    >
+                      {meta}
+                    </p>
                   </Link>
+                  <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border-subtle pt-2 sm:justify-end sm:border-0 sm:pt-0">
+                    <DeliverableStatusBadge status={deliverable.status} />
+                    <div className="flex items-center gap-2">
+                      {deliverable.status !== 'approved' && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setLinkTarget(deliverable)}
+                        >
+                          Add Link
+                        </Button>
+                      )}
+                      <Link
+                        to="/admin/projects/$projectId/deliverables/$deliverableId"
+                        params={{ projectId, deliverableId: deliverable.id }}
+                        className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                        aria-label={`Open ${deliverable.title}`}
+                      >
+                        <Button variant="ghost" size="icon-sm" aria-hidden="true" tabIndex={-1}>
+                          <ChevronRight />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

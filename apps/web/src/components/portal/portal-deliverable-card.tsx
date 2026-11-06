@@ -15,7 +15,7 @@ export function PortalDeliverableCard({ deliverable }: PortalDeliverableCardProp
     <Card className="noise-overlay">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-h3">{deliverable.title}</CardTitle>
+          <CardTitle className="break-words text-h3">{deliverable.title}</CardTitle>
           <DeliverableStatusBadge status={deliverable.status} />
         </div>
         {deliverable.description && (
@@ -34,7 +34,7 @@ export function PortalDeliverableCard({ deliverable }: PortalDeliverableCardProp
               projectId: deliverable.projectId,
               deliverableId: deliverable.id,
             }}
-            className="inline-flex items-center gap-1.5 text-caption font-medium text-primary hover:underline"
+            className="inline-flex items-center gap-1.5 rounded-md text-caption font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             View deliverable
           </Link>

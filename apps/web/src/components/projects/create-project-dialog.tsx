@@ -171,7 +171,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="project-deadline">
                   Deadline <span className="text-muted-foreground">(optional)</span>
@@ -214,7 +214,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                         >
                           <CalendarIcon aria-hidden="true" />
                         </PopoverTrigger>
-                        <PopoverContent align="end" className="w-auto p-0">
+                        <PopoverContent align="end" className="w-auto max-w-[calc(100vw-2rem)] p-0">
                           <Calendar
                             mode="single"
                             fixedWeeks

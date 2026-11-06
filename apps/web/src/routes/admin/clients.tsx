@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useClients } from '@/hooks/clients/use-clients';
@@ -9,6 +9,15 @@ import { UpdateClientDialog } from '@/components/clients/update-client-dialog';
 import { DeleteClientDialog } from '@/components/clients/delete-client-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { cn, linkFocusRing } from '@/lib/utils';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 export const Route = createFileRoute('/admin/clients')({
   component: ClientsPage,
@@ -16,26 +25,40 @@ export const Route = createFileRoute('/admin/clients')({
 
 function ClientsListSkeleton() {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <table className="w-full text-body-sm">
-        <tbody className="divide-y divide-border-subtle">
-          {[1, 2, 3].map((i) => (
-            <tr key={i}>
-              <td className="px-4 py-3">
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="mt-1.5 h-4 w-32" />
-              </td>
-              <td className="hidden px-4 py-3 sm:table-cell">
-                <Skeleton className="h-4 w-40" />
-              </td>
-              <td className="px-4 py-3 text-right">
-                <Skeleton className="ml-auto h-8 w-24" />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div className="space-y-3 sm:hidden">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <Skeleton className="h-5 w-36" />
+            <Skeleton className="mt-2 h-4 w-48" />
+            <div className="mt-3 flex items-center justify-end gap-2 border-t border-border-subtle pt-3">
+              <Skeleton className="h-8 w-14" />
+              <Skeleton className="h-8 w-14" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto rounded-lg border border-border bg-card shadow-sm sm:block">
+        <table className="w-full text-body-sm">
+          <tbody className="divide-y divide-border-subtle">
+            {[1, 2, 3].map((i) => (
+              <tr key={i}>
+                <td className="px-4 py-3">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="mt-1.5 h-4 w-32" />
+                </td>
+                <td className="hidden px-4 py-3 sm:table-cell">
+                  <Skeleton className="h-4 w-40" />
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <Skeleton className="ml-auto h-8 w-24" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -58,7 +81,23 @@ function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <Breadcrumb className="hidden lg:block">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<Link to="/admin" />}
+              className={cn('max-w-48 truncate', linkFocusRing)}
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Clients</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-h1 text-foreground">Clients</h2>
         <Button variant={isEmpty ? 'outline' : 'default'} onClick={() => setCreateOpen(true)}>
           New Client
@@ -72,61 +111,83 @@ function ClientsPage() {
       )}
 
       {!isPending && !isError && clients && clients.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm noise-overlay">
-          <table className="w-full text-body-sm">
-            <thead>
-              <tr className="bg-surface-raised text-left">
-                <th
-                  scope="col"
-                  className="px-4 py-2.5 font-medium text-caption text-muted-foreground"
-                >
-                  Client
-                </th>
-                <th
-                  scope="col"
-                  className="hidden px-4 py-2.5 font-medium text-caption text-muted-foreground sm:table-cell"
-                >
-                  Contact
-                </th>
-                <th
-                  scope="col"
-                  className="hidden px-4 py-2.5 font-medium text-caption text-muted-foreground md:table-cell"
-                >
-                  Company
-                </th>
-                <th scope="col" className="px-4 py-2.5">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {clients.map((client) => (
-                <tr key={client.id} className="transition-colors hover:bg-surface-raised">
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    {client.name}
-                    <span className="mt-0.5 block font-mono text-caption font-normal text-muted-foreground sm:hidden">
-                      {client.email}
-                    </span>
-                  </td>
-                  <td className="hidden px-4 py-3 font-mono text-muted-foreground sm:table-cell">
-                    {client.email}
-                  </td>
-                  <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                    {client.company || <span className="text-muted-foreground/60">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}>
-                      Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeletingClient(client)}>
-                      Delete
-                    </Button>
-                  </td>
+        <>
+          <div className="space-y-3 sm:hidden">
+            {clients.map((client) => (
+              <div
+                key={client.id}
+                className="rounded-lg border border-border bg-card p-4 shadow-sm"
+              >
+                <p className="font-medium text-foreground">{client.name}</p>
+                <p className="mt-0.5 break-all font-mono text-caption text-muted-foreground">
+                  {client.email}
+                </p>
+                {client.company && (
+                  <p className="mt-1 text-caption text-muted-foreground">{client.company}</p>
+                )}
+                <div className="mt-3 flex items-center justify-end gap-2 border-t border-border-subtle pt-3">
+                  <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}>
+                    Edit
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setDeletingClient(client)}>
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto rounded-lg border border-border bg-card shadow-sm noise-overlay sm:block">
+            <table className="w-full text-body-sm">
+              <thead>
+                <tr className="bg-surface-raised text-left">
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 font-medium text-caption text-muted-foreground"
+                  >
+                    Client
+                  </th>
+                  <th
+                    scope="col"
+                    className="hidden px-4 py-2.5 font-medium text-caption text-muted-foreground sm:table-cell"
+                  >
+                    Contact
+                  </th>
+                  <th
+                    scope="col"
+                    className="hidden px-4 py-2.5 font-medium text-caption text-muted-foreground md:table-cell"
+                  >
+                    Company
+                  </th>
+                  <th scope="col" className="px-4 py-2.5">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border-subtle">
+                {clients.map((client) => (
+                  <tr key={client.id} className="transition-colors hover:bg-surface-raised">
+                    <td className="px-4 py-3 font-medium text-foreground">{client.name}</td>
+                    <td className="hidden px-4 py-3 font-mono text-muted-foreground sm:table-cell">
+                      {client.email}
+                    </td>
+                    <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
+                      {client.company || <span className="text-muted-foreground/60">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}>
+                        Edit
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeletingClient(client)}>
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <UpdateClientDialog

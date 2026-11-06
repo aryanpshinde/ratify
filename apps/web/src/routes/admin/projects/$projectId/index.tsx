@@ -17,10 +17,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PROJECT_STATUS_GROUPS } from '@/lib/constants';
+import { cn, linkFocusRing } from '@/lib/utils';
 import { formatDeadline } from '@/lib/format';
 import { useInvitations } from '@/hooks/projects/use-invitations';
 import { InviteClientDialog } from '@/components/projects/invite-client-dialog';
 import { PendingInvitationsList } from '@/components/projects/pending-invitations-list';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 export const Route = createFileRoute('/admin/projects/$projectId/')({
   component: ProjectDetailPage,
@@ -77,8 +86,24 @@ function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb className="hidden lg:block">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<Link to="/admin" />}
+              className={cn('max-w-48 truncate', linkFocusRing)}
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{project.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       <div className="flex items-center gap-3">
-        <Link to="/admin">
+        <Link to="/admin" className="shrink-0">
           <Tooltip>
             <TooltipTrigger
               render={
@@ -90,8 +115,8 @@ function ProjectDetailPage() {
             <TooltipContent>Back to dashboard</TooltipContent>
           </Tooltip>
         </Link>
-        <div className="flex items-center gap-3">
-          <h2 className="text-h1 text-foreground">{project.title}</h2>
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+          <h2 className="min-w-0 text-h1 break-words text-foreground">{project.title}</h2>
           <Select
             value={project.status}
             items={statusOptions}
@@ -190,7 +215,7 @@ function ProjectDetailPage() {
       </div>
       <Card className="noise-overlay">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-h3">Client Access</CardTitle>
             <Button size="sm" onClick={() => setInviteOpen(true)}>
               <UserPlus />

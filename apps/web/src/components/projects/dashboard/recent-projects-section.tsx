@@ -1,6 +1,8 @@
 import type { ProjectListItem } from '@ratify/shared';
+import { Link } from '@tanstack/react-router';
 import { Card } from '@/components/ui/card';
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge';
+import { linkFocusRing, cn } from '@/lib/utils';
 import { timeAgo } from '@/lib/format';
 
 interface RecentProjectsSectionProps {
@@ -14,7 +16,16 @@ export function RecentProjectsSection({ projects }: RecentProjectsSectionProps) 
       <Card className="noise-overlay">
         <div className="divide-y divide-border">
           {projects.map((project) => (
-            <div key={project.id} className="flex items-center justify-between gap-3 px-4 py-3">
+            <Link
+              key={project.id}
+              to="/admin/projects/$projectId"
+              params={{ projectId: project.id }}
+              className={cn(
+                'flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50',
+                linkFocusRing,
+                'focus-visible:ring-inset',
+              )}
+            >
               <div className="min-w-0">
                 <p className="truncate text-body font-medium text-foreground">{project.title}</p>
                 <p className="truncate text-caption text-muted-foreground">{project.clientName}</p>
@@ -25,7 +36,7 @@ export function RecentProjectsSection({ projects }: RecentProjectsSectionProps) 
                   {timeAgo(project.updatedAt)}
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </Card>

@@ -28,7 +28,7 @@ function StatusChangeMetadata({ metadata }: { metadata: Record<string, unknown> 
   const newStatus = metadata['new_status'] as ProjectStatus | undefined;
   if (!oldStatus || !newStatus) return null;
   return (
-    <span className="mt-1 inline-flex items-center gap-1.5">
+    <span className="mt-1 inline-flex flex-wrap items-center gap-1.5">
       <ProjectStatusBadge status={oldStatus} />
       <span className="text-caption text-muted-foreground">→</span>
       <ProjectStatusBadge status={newStatus} />

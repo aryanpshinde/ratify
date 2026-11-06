@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { MAX_FILE_SIZE_BYTES, fileVersionAcceptAttribute } from '@ratify/shared';
+import { useDropzone } from 'react-dropzone';
+import { MAX_FILE_SIZE_BYTES, allowedFileMimeTypes } from '@ratify/shared';
 import { ApiError } from '@/lib/api';
 import { useCreateFileVersion } from '@/hooks/deliverables/use-create-file-version';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { File as FileIcon, Upload } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +40,25 @@ export function FileVersionDialog({
   const createFileVersion = useCreateFileVersion();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: Object.fromEntries(allowedFileMimeTypes.map((mime) => [mime, []])),
+    maxSize: MAX_FILE_SIZE_BYTES,
+    maxFiles: 1,
+    onDrop: (acceptedFiles, rejections) => {
+      setError(null);
+      const code = rejections[0]?.errors[0]?.code;
+      if (code) {
+        setError(
+          code === 'file-too-large'
+            ? 'File exceeds the 10 MB limit'
+            : 'That file type is not supported.',
+        );
+        return;
+      }
+      setSelectedFile(acceptedFiles[0] ?? null);
+    },
+  });
 
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -99,24 +120,48 @@ export function FileVersionDialog({
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="file-version-input">File</Label>
-            <Input
-              id="file-version-input"
-              type="file"
-              accept={fileVersionAcceptAttribute}
-              autoFocus
-              onChange={(event) => {
-                setError(null);
-                setSelectedFile(event.target.files?.[0] ?? null);
-              }}
-            />
-            {selectedFile && (
-              <p className="text-caption text-muted-foreground">
-                {selectedFile.name} · {formatBytes(selectedFile.size)}
-              </p>
-            )}
-            <p className="text-caption text-muted-foreground">
-              Max 10 MB · PNG, JPEG, GIF, WebP, PDF, TXT, MD, DOC, DOCX, ZIP
-            </p>
+            <div
+              {...getRootProps({
+                className: cn(
+                  'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center transition-colors hover:border-ring hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                  isDragActive && 'border-ring bg-muted/50',
+                ),
+              })}
+            >
+              <input {...getInputProps({ id: 'file-version-input', autoFocus: true })} />
+              {selectedFile ? (
+                <>
+                  <FileIcon
+                    size={28}
+                    strokeWidth={1.5}
+                    className="text-accent"
+                    aria-hidden="true"
+                  />
+                  <p className="max-w-full truncate text-body-sm font-medium text-foreground">
+                    {selectedFile.name}
+                  </p>
+                  <p className="font-mono text-caption text-muted-foreground tabular-nums">
+                    {formatBytes(selectedFile.size)} · Click to change
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Upload
+                    size={28}
+                    strokeWidth={1.5}
+                    className="text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  <p className="text-body-sm font-medium text-foreground">
+                    Drop your file here, or <span className="text-primary">browse for one</span>
+                  </p>
+                  <p className="text-caption text-muted-foreground">
+                    PNG, JPEG, GIF, WebP, PDF, TXT, MD, DOC, DOCX, ZIP
+                  </p>
+                </>
+              )}
+            </div>
+            <p className="text-caption text-muted-foreground">Max 10 MB</p>
             {error && <p className="text-caption text-error">{error}</p>}
           </div>
 

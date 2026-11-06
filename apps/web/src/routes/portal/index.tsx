@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { usePortalProjects } from '@/hooks/portal/use-portal-projects';
 import { PortalProjectCard } from '@/components/portal/portal-project-card';
 import { PortalProjectsEmptyState } from '@/components/portal/portal-projects-empty-state';
-import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
+import { PortalGridSkeleton } from '@/components/portal/portal-grid-skeleton';
 import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/portal/')({
@@ -24,13 +24,13 @@ function PortalHome() {
   }, [isError]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <h2 className="text-h1 text-foreground">Your projects</h2>
 
-      {isPending && <DashboardSkeleton />}
+      {isPending && <PortalGridSkeleton />}
 
       {isError && !projects && (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12 text-center shadow-sm noise-overlay">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-6 text-center shadow-sm noise-overlay sm:p-12">
           <p className="text-h2 text-foreground">Could not load your projects</p>
           <p className="mt-2 max-w-sm text-body text-muted-foreground">
             Something went wrong on our end. Please try again in a moment.
